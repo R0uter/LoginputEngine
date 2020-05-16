@@ -1,6 +1,10 @@
 import tqdm
+import os
 from train import data_produce, get_transition_from_data, get_smooth_transition
 import database_generator
+
+if not os.path.exists('./result_files'):
+        os.makedirs('./result_files')
 
 # 1 从 articles 目录中生成预处理好的语料
 # data_produce.gen_data_txt(process_num=10, mem_limit_gb=15)
