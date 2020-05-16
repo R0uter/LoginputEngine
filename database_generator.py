@@ -135,7 +135,7 @@ def writeLMDB():
             os.remove(file)
 
     pbar = tqdm.tqdm(total=len(data_to_write))
-    env = lmdb.open(LMDB_FILE, map_size=104857600000, subdir=False)
+    env = lmdb.open(LMDB_FILE+'-tmp', map_size=104857600000, lock=False, subdir=False)
 
     txn = env.begin(write=True)
     for str_key, value in data_to_write.items():
@@ -148,7 +148,9 @@ def writeLMDB():
             v = struct.pack("d", value)
         txn.put(key, v)
     txn.commit()
+    env.copy(LMDB_FILE, compact=True)
     env.close()
+    os.remove(LMDB_FILE+'-tmp')
     pbar.close()
     print('🎉️ All done!')
 

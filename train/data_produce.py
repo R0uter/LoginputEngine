@@ -89,7 +89,9 @@ def sumup_tmp_files():
     remove_tmp_file()
 
 
-def gen_data_txt():
+def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
+    PROCESS_NUM = process_num
+    MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
     print('💭开始统计资料总条目数...')
     all_files = []
     total_counts = 0

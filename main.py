@@ -3,14 +3,14 @@ from train import data_produce, get_transition_from_data, get_smooth_transition
 import database_generator
 
 # 1 从 articles 目录中生成预处理好的语料
-# data_produce.gen_data_txt()
+# data_produce.gen_data_txt(process_num=10, mem_limit_gb=15)
 # 2 从生成的 data.txt 文件统计转移
-get_transition_from_data.tmp_to_database()
+get_transition_from_data.process(process_num=10, mem_limit_gb=15)
 # 3 对统计得出的转移词频进行修剪以缩小体积并用最大似然法平滑
-# get_smooth_transition.process()
+get_smooth_transition.process()
 # 4 用平滑后的结果生成用于计算的二进制数据库，一个 SQLite 用来查拼音到词汇，
 #   一个 LMDB 用来查词汇转移概率（以 10 为底的对数）
-# database_generator.writeLMDB()
+database_generator.writeLMDB()
 
 
 from dag.dag import get_candidates_from

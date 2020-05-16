@@ -57,6 +57,7 @@ def smooth3gram():
             count = struct.unpack('i', v)[0]
             if count < max_count: continue
             f, m, t = k.decode(kGB18030).split('_')
+            if len(f) == 0 or len(t) == 0 or len(m) == 0: continue
             if f in words_to_delete or \
                 t in words_to_delete or \
                     m in words_to_delete:
@@ -96,8 +97,8 @@ def smooth2gram():
             count = struct.unpack('i', v)[0]
             if count < max_count: continue
             f, t = k.decode(kGB18030).split('_')
+            if len(f) == 0 or len(t) == 0: continue
             if f in words_to_delete or t in words_to_delete: continue
-
             data.setdefault(t, {})
             data[t][f] = count / gram1data[f]
             total_count += 1

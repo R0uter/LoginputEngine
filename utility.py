@@ -12,9 +12,10 @@ from zhon import hanzi
 
 cc = OpenCC('t2s')
 
+
 def load_user_data_jieba():
     jieba.load_userdict('./res/new_words.txt')
-# jieba.enable_paddle()
+
 
 special_py_list = ['ao', 'ai', 'ie', 'ue', 'an']
 # 声母
