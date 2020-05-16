@@ -12,7 +12,8 @@ from zhon import hanzi
 
 cc = OpenCC('t2s')
 
-jieba.load_userdict('./res/new_words.txt')
+def load_user_data_jieba():
+    jieba.load_userdict('./res/new_words.txt')
 # jieba.enable_paddle()
 
 special_py_list = ['ao', 'ai', 'ie', 'ue', 'an']
@@ -56,7 +57,6 @@ def t2s(s: str) -> str:
 
 
 def cut_line(s: str) -> [str]:
-    # return jieba.lcut(s, use_paddle=True)
     return list(jieba.cut(s, cut_all=False, HMM=True))
 
 
