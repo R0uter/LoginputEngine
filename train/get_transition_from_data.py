@@ -109,7 +109,6 @@ def _produce_database_in_memory(paths, env_path):
         env.copy(env_path, compact=True)
         env.close()
         os.remove(env_path+'-tmp')
-        os.remove(env_path+'-tmp-lock')
         data.clear()
         del data
         pbar.close()
