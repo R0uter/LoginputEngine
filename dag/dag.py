@@ -32,7 +32,6 @@ if Database_Type == kLMDB:
                     map_size=1048576000,
                     readonly=True,
                     lock=False,
-                    meminit=False,
                     subdir=False)
     con = sqlite3.connect(PY_DATABASE)
     con.executescript('''
@@ -65,8 +64,8 @@ print('Done.')
 
 
 def _get_words_from(pinyin: [str]) -> [str]:
-    pys = "'".join(pinyin)
     if Database_Type == kRAWDATA:
+        pys = "'".join(pinyin)
         if pys not in py2words_data: return None
         return py2words_data[pys]
     else:
@@ -254,6 +253,56 @@ def get_candidates_from(py: str, path_num=6, log=False) -> list:
                         else:
                             score = prev_item.score * new_score
                         Graph[to_idx].put(score, new_path)
+
+    result = [item for item in Graph[-1]]
+    return sorted(result, key=lambda item: item.score, reverse=True)
+
+
+def evalue(phrase: str, path_num=6, log=False) -> list:
+    phrase_num = len(phrase)
+    if phrase_num == 0: return []
+    Graph = [PrioritySet(path_num) for _ in range(phrase_num)]
+
+    # 第一个词的处理
+    from_index = 0
+    for to_idx in range(from_index, phrase_num):
+        word = phrase[from_index:to_idx + 1]
+        Graph[to_idx].put(_get_gram_1_weight_from(word), [word])
+
+    # 第二个字词的处理
+    if phrase_num >= 2:
+        for last_index, prev_paths in enumerate(Graph):
+            from_index = last_index + 1
+            for to_idx in range(from_index, phrase_num):
+                word = phrase[from_index:to_idx + 1]
+                for prev_item in prev_paths:
+                    last_one = prev_item.path[0]
+                    new_path = prev_item.path + [word]
+                    new_score = _get_gram_2_weight_from(last_one, word)
+                    if log:
+                        score = prev_item.score + new_score
+                    else:
+                        score = prev_item.score * new_score
+                    Graph[to_idx].put(score, new_path)
+
+    # 第三个字词往后处理 gram3
+    if phrase_num >= 3:
+        for last_index, prev_paths in enumerate(Graph):
+            from_index = last_index + 1
+            for to_idx in range(from_index, phrase_num):
+                word = phrase[from_index:to_idx + 1]
+                for prev_item in prev_paths:
+                    if len(prev_item.path) < 2: continue
+                    last_one = prev_item.path[-1]
+                    last_last_one = prev_item.path[-2]
+                    new_path = prev_item.path + [word]
+                    new_score = _get_gram_3_weight_from(
+                        last_last_one, last_one, word)
+                    if log:
+                        score = prev_item.score + new_score
+                    else:
+                        score = prev_item.score * new_score
+                    Graph[to_idx].put(score, new_path)
 
     result = [item for item in Graph[-1]]
     return sorted(result, key=lambda item: item.score, reverse=True)
