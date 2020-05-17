@@ -39,7 +39,7 @@ def smooth3gram():
     data = {}
 
     total_count = 0
-    env = lmdb.open(kTransition3gram, 536870912000, subdir=False)
+    env = lmdb.open(kTransition3gram, 536870912000, subdir=False, lock=False)
     max_count = 0
     all = env.stat()['entries']
     print('|---Counting items...')
@@ -80,7 +80,7 @@ def smooth2gram():
     total_count = 0
     max_count = 0
     print('|---Counting items...')
-    env = lmdb.open(kTransition2gram, 536870912000, subdir=False)
+    env = lmdb.open(kTransition2gram, 536870912000, subdir=False, lock=False)
     all = env.stat()['entries']
     with env.begin() as t:
         for _, value in t.cursor():
