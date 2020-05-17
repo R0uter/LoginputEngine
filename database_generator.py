@@ -25,7 +25,7 @@ def _get_data_ready():
     print('Getting things ready...')
     g1 = utility.readjsondatafromfile(GRAM1FILE)
     for word, weight in g1.items():
-        if len(word) > MAX_WORD_LENGTH: continue
+        if len(word) > MAX_WORD_LENGTH and word != 'max_value' and word != 'min_value': continue
         data_to_write[word] = math.log10(weight)
     del g1
     print('Loading: 1/3')
