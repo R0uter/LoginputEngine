@@ -3,6 +3,7 @@ import lmdb
 import utility
 import struct
 import gc
+from train import inject
 
 WORD_FREQ = './result_files/word_freq.txt'
 GRAM1FILE_COUNT = './result_files/1gram_count.json'
@@ -162,11 +163,12 @@ def process():
         for word in pyData[pinyin]:
             if word in words_to_delete:
                 new_words.remove(word)
+        if len(new_words) > 1:
+            new_words.sort(key=lambda x:gram1data[x], reverse=True)
         if len(new_words) > 0:
             data[pinyin] = new_words
+
     print('Loading...3/4')
-    utility.writejson2file(data, PY2WORDSFILE)
-    print('Loading...4/4')
     pbar.close()
 
     print('Slim and smooth uni-gram data')
@@ -175,6 +177,10 @@ def process():
     smooth2gram()
     print('Slim and smooth tri-gram data')
     smooth3gram()
+    print('Loading...4/4')
+    print('Injecting custom words...')
+    inject.start(data)
+    utility.writejson2file(data, PY2WORDSFILE)
     print('😃 Done!')
 
 if __name__ == '__main__':

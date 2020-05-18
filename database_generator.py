@@ -54,7 +54,6 @@ def _get_data_ready():
 def _writePYDatabase():
     coding = 'gb18030'
     pyData = utility.readjsondatafromfile(PY2WORDSFILE)
-    g1 = utility.readjsondatafromfile(GRAM1FILE)
     print('Start writing pinyin to words data into Sqlite')
     if os.path.exists(PY_DATABASE):
         os.remove(PY_DATABASE)
@@ -75,16 +74,8 @@ def _writePYDatabase():
     for py, words in pyData.items():
         pbar.update()
         if len(py.split("'")) > MAX_WORD_LENGTH: continue
-        tmp = {}
-        sorted_words = []
-        for w in words:
-            tmp[w] = g1[w]
-        for word, _ in sorted(tmp.items(),
-                              key=operator.itemgetter(1),
-                              reverse=True):
-            sorted_words.append(word)
-        pyList[py] = '_'.join(sorted_words)
-    del g1, pyData
+        pyList[py] = '_'.join(words)
+    del pyData
 
     for pys, value in pyList.items():
         pbar.update()
