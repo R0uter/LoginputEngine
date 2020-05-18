@@ -18,34 +18,43 @@ GRAM2FILE = './result_files/2gram_transition.json'
 GRAM3FILE = './result_files/3gram_transition.json'
 PY2WORDSFILE = './result_files/pinyin2words.json'
 
-print('Loading data.')
-if Database_Type == kRAWDATA:
-    py2words_data = utility.readjsondatafromfile(PY2WORDSFILE)
-    gram1data = utility.readjsondatafromfile(GRAM1FILE)
-    gram2data = utility.readjsondatafromfile(GRAM2FILE)
-    gram3data = utility.readjsondatafromfile(GRAM3FILE)
+py2words_data, gram1data, gram2data, gram3data = {}, {}, {}, {}
+env = None
+con = None
 
-if Database_Type == kLMDB:
-    env = lmdb.open(LMDB_FILE,
-                    map_size=1048576000,
-                    readonly=True,
-                    lock=False,
-                    subdir=False)
-    con = sqlite3.connect(PY_DATABASE)
-    con.executescript('''
-            PRAGMA page_size = 4096;
-            PRAGMA locking_mode =  EXCLUSIVE;
-            PRAGMA temp_store = MEMORY;
-            PRAGMA cache_size = 40960;
-            PRAGMA mmap_size = 40960;
-            PRAGMA synchronous = OFF;
-            PRAGMA journal_mode = OFF;
-            PRAGMA query_only = 1;
-            ''')
-    con.commit()
-    print(env.stat(), env.info())
+def load_data():
+    print('Loading data.')
+    if Database_Type == kRAWDATA:
+        global py2words_data, gram1data, gram2data, gram3data
+        py2words_data = utility.readjsondatafromfile(PY2WORDSFILE)
+        gram1data = utility.readjsondatafromfile(GRAM1FILE)
+        gram2data = utility.readjsondatafromfile(GRAM2FILE)
+        gram3data = utility.readjsondatafromfile(GRAM3FILE)
 
-print('Done.')
+    if Database_Type == kLMDB:
+        global env, con
+        env = lmdb.open(LMDB_FILE,
+                        map_size=1048576000,
+                        readonly=True,
+                        lock=False,
+                        subdir=False)
+        con = sqlite3.connect(PY_DATABASE)
+        con.executescript('''
+                PRAGMA page_size = 4096;
+                PRAGMA locking_mode =  EXCLUSIVE;
+                PRAGMA temp_store = MEMORY;
+                PRAGMA cache_size = 40960;
+                PRAGMA mmap_size = 40960;
+                PRAGMA synchronous = OFF;
+                PRAGMA journal_mode = OFF;
+                PRAGMA query_only = 1;
+                ''')
+        con.commit()
+        print(env.stat(), env.info())
+        print('Done.')
+
+load_data()
+
 
 
 def _get_words_from(pinyin: [str]) -> [str]:
@@ -129,7 +138,7 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
         return _get_gram_2_weight_from(last_one, one)
 
 
-def get_candidates_from(py: str, path_num=6, log=False) -> list:
+def get_candidates_from(py: str, path_num=6, log=Database_Type == kLMDB) -> list:
     pinyin_list = py.split("'")
     pinyin_num = len(pinyin_list)
     if pinyin_num == 0: return []
