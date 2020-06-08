@@ -52,6 +52,7 @@ def processing_line( q : multiprocessing.Queue):
         s = q.get()
         if s == kEndProcess:
             print('|---Finish and flushing...')
+            q.put(kEndProcess)
             flush_if_needed(force=True)
             break
         process_line(s)
@@ -112,11 +113,11 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
         '''.format(len(all_files), total_counts))
     remove_tmp_file()
     pbar = tqdm.tqdm(total=total_counts)
-    jobs_queues = []
+    queue = multiprocessing.Queue(10000)
+    jobs = []
     for _ in range(0, PROCESS_NUM):
-        q = multiprocessing.Queue(100)
-        p = multiprocessing.Process(target=processing_line, args=(q,))
-        jobs_queues.append((p, q))
+        p = multiprocessing.Process(target=processing_line, args=(queue,))
+        jobs.append(p)
         p.start()
 
     for path in all_files:
@@ -140,23 +141,19 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
         # 只读取需要的部分，不再一次性加载全文
         for line in f:
             pbar.update(1)
-            handled = False
             # 挨个往子进程里送字符串进行处理
-            while not handled:
-                for _, q in jobs_queues:
-                    if q.full(): continue
-                    q.put(line)
-                    handled = True
+            while queue.full():
+                pass
+            queue.put(line)
         f.close()
 
     pbar.close()
 
-    for _, q in jobs_queues:
-        while q.full():pass
-        q.put(kEndProcess)
+    queue.put(kEndProcess)
     print('Waiting subprocess to exit')
-    for p, _ in jobs_queues:
-        while p.is_alive(): pass
+    for p in jobs:
+        while p.is_alive():
+            pass
     print('合并缓存……')
     sumup_tmp_files()
     print('🗃 语料预处理完成！')
