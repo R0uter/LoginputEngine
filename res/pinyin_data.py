@@ -904,5 +904,12 @@ s2i_dict = {
         "z": z,
         "c": c,
         "s": s,
+
+        "jve": jue,
+        "qve": que,
+        "lve": lue,
+        "nve": nue,
+        "yve": yue,
+        "xve": xue,
 }
 
