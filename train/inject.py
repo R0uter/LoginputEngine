@@ -1,6 +1,6 @@
 import sqlite3
 import sys
-from dag import dag
+
 import utility
 from tqdm import tqdm
 
@@ -23,6 +23,7 @@ def _read_words():
 
 def start(pyData):
     _read_words()
+    from dag import dag
     dag.Database_Type = dag.kRAWDATA
     dag.load_data()
     for py, words in pinyin_words.items():

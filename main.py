@@ -7,7 +7,7 @@ if not os.path.exists('./result_files'):
         os.makedirs('./result_files')
 
 # 1 从 articles 目录中生成预处理好的语料
-# data_produce.gen_data_txt(process_num=10, mem_limit_gb=15)
+data_produce.gen_data_txt(process_num=10, mem_limit_gb=15)
 # 2 从生成的 data.txt 文件统计转移
 get_transition_from_data.process(process_num=10, mem_limit_gb=15)
 # 3 对统计得出的转移词频进行修剪以缩小体积并用最大似然法平滑
