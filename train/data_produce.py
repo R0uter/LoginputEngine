@@ -69,7 +69,7 @@ def process_line(s: str):
 
 
 def remove_tmp_file():
-    for root, directories, filenames in os.walk(ARTICLE_DIR):
+    for root, directories, filenames in os.walk(FILEDIR):
         for filename in filenames:
             p = os.path.join(root, filename)
             if 'data_tmp-' in filename:
