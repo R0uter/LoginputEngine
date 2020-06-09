@@ -1,6 +1,6 @@
 import sqlite3
 import sys
-
+import database_generator
 import utility
 from tqdm import tqdm
 
@@ -44,6 +44,7 @@ def start():
     pyData = utility.readjsondatafromfile(PY2WORDSFILE)
     _start(pyData)
     utility.writejson2file(pyData, PY2WORDSFILE)
+    database_generator._writePYDatabase()
 
 
 
