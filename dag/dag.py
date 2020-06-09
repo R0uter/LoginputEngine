@@ -165,6 +165,7 @@ def get_candidates_from(py: str, path_num=6, log=Database_Type == kLMDB) -> list
                 words = _get_words_from(cut)
                 if words is None: continue
                 for prev_item in prev_paths:
+                    if len(prev_item.path) == 1: continue
                     last_one = prev_item.path[0]
                     for word in words:
                         new_path = prev_item.path + [word]

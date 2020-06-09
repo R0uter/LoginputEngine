@@ -146,35 +146,3 @@ def writeLMDB():
     print('🎉️ All done!')
 
 
-def writeSqlite():
-    _writePYDatabase()
-    if len(data_to_write) == 0:
-        print('💁 There is no cache exists, generating new data...‍')
-        _get_data_ready()
-    print('Start writing into Sqlite')
-    if os.path.exists(SQLITE_DIR):
-        os.remove(SQLITE_DIR)
-    pbar = tqdm.tqdm(total=len(data_to_write))
-    con = sqlite3.connect(SQLITE_DIR)
-    con.execute(
-        'create table if not exists transition (w1 text, w2 text, w3 text, weight real)'
-    )
-    con.commit()
-    cursor = con.cursor()
-
-    for str_key, value in data_to_write.items():
-        pbar.update(1)
-        if isinstance(value, float):
-            word_list = str_key.split('_')
-            while len(word_list) < 3:
-                word_list.insert(0, '-')
-            sql = 'insert into transition values ("{}",?)'.format(
-                '","'.join(word_list))
-            cursor.execute(sql, [value])
-
-    con.commit()
-    con.execute('create index transition_index on transition (w1, w2, w3)')
-    con.commit()
-    con.close()
-    pbar.close()
-    print('🎉️ All done!')

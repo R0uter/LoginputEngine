@@ -7,15 +7,18 @@ if not os.path.exists('./result_files'):
         os.makedirs('./result_files')
 
 # 1 从 articles 目录中生成预处理好的语料
-data_produce.gen_data_txt(process_num=10, mem_limit_gb=15)
+data_produce.gen_data_txt(process_num=5, mem_limit_gb=15)
 # 2 从生成的 data.txt 文件统计转移
-get_transition_from_data.process(process_num=10, mem_limit_gb=15)
+get_transition_from_data.process(process_num=5, mem_limit_gb=15)
 # 3 对统计得出的转移词频进行修剪以缩小体积并用最大似然法平滑
 get_smooth_transition.process()
 # 4 用平滑后的结果生成用于计算的二进制数据库，一个 SQLite 用来查拼音到词汇，
 #   一个 LMDB 用来查词汇转移概率（以 10 为底的对数）
 database_generator.writeLMDB()
 
+# 5 可选追加额外自定义词条写入词库，写入的词库按最低概率存储，仅作单词命中补充
+import train.inject
+train.inject.start()
 
 from dag.dag import get_candidates_from
 # import utility

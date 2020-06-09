@@ -3,7 +3,6 @@ import lmdb
 import utility
 import struct
 import gc
-from train import inject
 
 WORD_FREQ = './result_files/word_freq.txt'
 GRAM1FILE_COUNT = './result_files/1gram_count.json'
@@ -99,7 +98,7 @@ def smooth2gram():
             if count < max_count: continue
             f, t = k.decode(kGB18030).split('_')
             if len(f) == 0 or len(t) == 0: continue
-            if f in words_to_delete or t in words_to_delete: continue
+            # if f in words_to_delete or t in words_to_delete: continue
             data.setdefault(t, {})
             data[t][f] = count / gram1data[f]
             total_count += 1
@@ -179,7 +178,6 @@ def process():
     smooth3gram()
     print('Loading...4/4')
     print('Injecting custom words...')
-    inject.start(data)
     utility.writejson2file(data, PY2WORDSFILE)
     print('😃 Done!')
 

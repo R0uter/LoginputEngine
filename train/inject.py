@@ -21,7 +21,7 @@ def _read_words():
             pinyin_words[py].append(word)
 
 
-def start(pyData):
+def _start(pyData):
     _read_words()
     from dag import dag
     dag.Database_Type = dag.kRAWDATA
@@ -40,9 +40,9 @@ def start(pyData):
     pbar.close()
 
 
-def test():
+def start():
     pyData = utility.readjsondatafromfile(PY2WORDSFILE)
-    start(pyData)
+    _start(pyData)
     utility.writejson2file(pyData, PY2WORDSFILE)
 
 
