@@ -145,6 +145,7 @@ def get_candidates_from(py: str,
     pinyin_list = py.split("'")
     pinyin_num = len(pinyin_list)
     if pinyin_num == 0: return []
+    cache = {}
     Graph = [PrioritySet(path_num) for _ in range(pinyin_num)]
 
     # 第一个词的处理
@@ -165,11 +166,17 @@ def get_candidates_from(py: str,
             if last_index < 1: continue
             from_index = last_index + 1
             for to_idx in range(from_index, pinyin_num):
-                cut = pinyin_list[from_index:to_idx + 1]
-                words = _get_words_from(cut)
-                if words is None: continue
+                key = from_index*100+to_idx
+                if key in cache:
+                    words = cache[key]
+                else:
+                    cut = pinyin_list[from_index:to_idx + 1]
+                    words = _get_words_from(cut)
+                    if words is None: continue
+                    cache[key] = words
+
                 for prev_item in prev_paths:
-                    if len(prev_item.path) == 1: continue
+                    if len(prev_item.path) != 1: continue
                     last_one = prev_item.path[0]
                     for word in words:
                         new_path = prev_item.path + [word]
@@ -186,9 +193,15 @@ def get_candidates_from(py: str,
             if last_index < 2: continue
             from_index = last_index + 1
             for to_idx in range(from_index, pinyin_num):
-                cut = pinyin_list[from_index:to_idx + 1]
-                words = _get_words_from(cut)
-                if words is None: continue
+                key = from_index*100+to_idx
+                if key in cache:
+                    words = cache[key]
+                else:
+                    cut = pinyin_list[from_index:to_idx + 1]
+                    words = _get_words_from(cut)
+                    if words is None: continue
+                    cache[key] = words
+
                 for prev_item in prev_paths:
                     if len(prev_item.path) < 2: continue
                     last_one = prev_item.path[-1]
