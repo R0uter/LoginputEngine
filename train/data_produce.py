@@ -85,7 +85,8 @@ def sumup_tmp_files():
             p = os.path.join(root, filename)
             if 'data_tmp-' in filename:
                 with open(p, 'r', encoding=kGB18030) as t:
-                    f.write(t.read())
+                    for line in t:
+                        f.write(line)
     f.close()
     remove_tmp_file()
 

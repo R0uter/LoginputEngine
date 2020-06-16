@@ -239,6 +239,7 @@ def gen_py_words_json():
             # 如果词是两个字，但拼音能合在一起，那么就额外添加个条目当作单字处理一次
             gram1data.append((word, pys, weight))
             target.write('{}\t{}\t{}\n'.format(word, pys, weight))
+    target.close()
 
     py2words_data = {}
     for word, py, w in gram1data:
