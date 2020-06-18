@@ -38,6 +38,8 @@ def _start(pyData):
         else:
             pyData[py] = words
     pbar.close()
+    dag.Database_Type = dag.kLMDB
+    dag.load_data()
 
 
 def start():
