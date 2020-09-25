@@ -1,0 +1,4 @@
+lmdb
+tqdm
+psutil
+pypinyin

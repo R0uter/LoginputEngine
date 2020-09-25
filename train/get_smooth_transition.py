@@ -58,10 +58,6 @@ def smooth3gram():
             if count < max_count: continue
             f, m, t = k.decode(kGB18030).split('_')
             if len(f) == 0 or len(t) == 0 or len(m) == 0: continue
-            if f in words_to_delete or \
-                t in words_to_delete or \
-                    m in words_to_delete:
-                continue
             data.setdefault(t, {})
             data[t].setdefault(m, {})
             data[t][m][f] = count / gram1data[f]
@@ -98,7 +94,6 @@ def smooth2gram():
             if count < max_count: continue
             f, t = k.decode(kGB18030).split('_')
             if len(f) == 0 or len(t) == 0: continue
-            # if f in words_to_delete or t in words_to_delete: continue
             data.setdefault(t, {})
             data[t][f] = count / gram1data[f]
             total_count += 1
@@ -166,19 +161,20 @@ def process():
             new_words.sort(key=lambda x:gram1data[x], reverse=True)
         if len(new_words) > 0:
             data[pinyin] = new_words
-
+            
     print('Loading...3/4')
+    utility.writejson2file(data, PY2WORDSFILE)
+    
     pbar.close()
 
+    print('Loading...4/4')
     print('Slim and smooth uni-gram data')
     smooth1gram()
     print('Slim and smooth bi-gram data')
     smooth2gram()
     print('Slim and smooth tri-gram data')
     smooth3gram()
-    print('Loading...4/4')
-    print('Injecting custom words...')
-    utility.writejson2file(data, PY2WORDSFILE)
+    
     print('😃 Done!')
 
 if __name__ == '__main__':
