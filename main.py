@@ -18,6 +18,8 @@ database_generator.writeLMDB()
 
 # 5 可选追加额外自定义词条写入词库，写入的词库按最低概率存储，仅作单词命中补充
 import train.inject
+# 这里重新生成一下拼音发射矩阵避免重复写入形成脏数据
+get_smooth_transition.gen_words2delete()
 train.inject.start()
 
 from dag.dag import get_candidates_from

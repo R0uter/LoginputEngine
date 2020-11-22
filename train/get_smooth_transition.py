@@ -133,11 +133,9 @@ def smooth1gram():
     print('uni-gram data count:', len(gram1data), 'trimed count:', len(data))
 
 
-def process():
+def gen_words2delete():
     global gram1data, pyData, words_to_delete
-    print('🤟 Start to load counted data...')
-
-    print('Loading...1/4')
+    
     gram1data = utility.readjsondatafromfile(GRAM1FILE_COUNT)
     max_count = sum(gram1data.values()) / len(gram1data)
     max_count *= G1CUT_RATE
@@ -145,7 +143,7 @@ def process():
     for word, count in gram1data.items():
         if count < max_count:
             words_to_delete[word] = 0
-    print('Loading...2/4')
+    
     pyData = utility.readjsondatafromfile(PY2WORDS_RAW_FILE)
     print('Slim pinyin to words file')
     pbar = tqdm(total=len(pyData))
@@ -162,12 +160,16 @@ def process():
         if len(new_words) > 0:
             data[pinyin] = new_words
             
-    print('Loading...3/4')
     utility.writejson2file(data, PY2WORDSFILE)
     
     pbar.close()
 
-    print('Loading...4/4')
+
+def process():
+    print('🤟 Start to load counted data...')
+    print('Loading...1/2')
+    gen_words2delete()
+    print('Loading...2/2')
     print('Slim and smooth uni-gram data')
     smooth1gram()
     print('Slim and smooth bi-gram data')
