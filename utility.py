@@ -1,7 +1,7 @@
 import gc
 import os
 import psutil
-from pypinyin import Style, pinyin
+from pypinyin import Style, pinyin, load_phrases_dict
 import json
 import plistlib
 import jieba as jieba
@@ -12,6 +12,9 @@ from zhon import hanzi
 
 cc = OpenCC('t2s')
 
+def load_user_data_pypinyin(): 
+    from res import pypinyinDict
+    load_phrases_dict(pypinyinDict.datas)
 
 def load_user_data_jieba():
     jieba.load_userdict('./res/new_words.txt')
