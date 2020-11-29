@@ -313,6 +313,7 @@ def deleteMBD():
 
 
 def process(process_num:int = 10, mem_limit_gb:int = 10):
+    global PROCESS_NUM, MEMORY_LIMIT_GB
     PROCESS_NUM = process_num
     MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
     utility.load_user_data_jieba()
