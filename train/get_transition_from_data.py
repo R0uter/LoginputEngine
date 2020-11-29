@@ -5,10 +5,10 @@ import struct
 import time
 import tqdm
 import utility
-import lmdb
 import multiprocessing
 import datetime
 import shutil
+import mmkv
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
@@ -29,58 +29,42 @@ transition_1gram_data = {}
 transition_2gram_data = {}
 transition_3gram_data = {}
 
-kTransition1gram = './result_files/1gram_transition_count.mdb'
-kTransition2gram = './result_files/2gram_transition_count.mdb'
-kTransition3gram = './result_files/3gram_transition_count.mdb'
+kTransition1gram = '1gram_transition_count'
+kTransition2gram = '2gram_transition_count'
+kTransition3gram = '3gram_transition_count'
+kMMKV_DATABASE = './result_files/transition_count'
+
 kGB18030 = 'gb18030'
 kEndProcess = '-=-=-=-EOF=-=-=-=-'
 last_time_flush_check = datetime.datetime.now()
 
 
 def _produce_database_for(paths, env_path):
-        env = lmdb.open(env_path+'-tmp', 
-                        536870912000, 
-                        subdir=False, 
-                        writemap=True, 
-                        map_async=True, 
-                        lock=False)
+        kv = mmkv.MMKV(env_path)
         all = 0
         for p in paths:
             all += utility.read_lines_from(p)
         pbar = tqdm.tqdm(total=all)
         for p in paths:
             with open(p, mode='r', encoding=kGB18030) as f:
-                with env.begin(write=True) as t:
-                    for line in f:
-                        pbar.update()
-                        try:
-                            word, valueStr = line.strip().split('\t')
-                            count = int(valueStr)
-                        except:
-                            continue
-                        
-                        key = word.encode(encoding=kGB18030)
-                        c = t.get(key)
-                        if c is not None:
-                            count += struct.unpack('i', c)[0]
-                            t.replace(key, struct.pack("i", count))
-                        else:
-                            t.put(key, struct.pack("i", count), dupdata=False)
-        pbar.close()  
-        env.copy(env_path, compact=True) 
-        env.close()
-        os.remove(env_path+'-tmp')
+                for line in f:
+                    pbar.update()
+                    try:
+                        word, valueStr = line.strip().split('\t')
+                        count = int(valueStr)
+                    except:
+                        continue
+
+                    c = kv.getInt(word)
+                    kv.set(count+c, key=word)
+
+        pbar.close()
         gc.collect()
 
 
 # 直接读取缓存并在内存中处理合并，然后一次性写入数据库（内存足够大就用这个，比较快）
 def _produce_database_in_memory(paths, env_path):
-        env = lmdb.open(env_path+'-tmp', 
-                        536870912000, 
-                        subdir=False, 
-                        writemap=True, 
-                        map_async=True, 
-                        lock=False)
+        kv = mmkv.MMKV(env_path)
         data = {}
         all = 0
         for p in paths:
@@ -100,15 +84,12 @@ def _produce_database_in_memory(paths, env_path):
                     else:
                         data[word] = count
         pbar.close()
+
         pbar = tqdm.tqdm(total=len(data))
-        with env.begin(write=True) as t:
-            for word, count in data.items():
-                pbar.update()
-                key = word.encode(encoding=kGB18030)
-                t.put(key, struct.pack("i", count), dupdata=False)
-        env.copy(env_path, compact=True)
-        env.close()
-        os.remove(env_path+'-tmp')
+        for word, count in data.items():
+            pbar.update()
+            kv.set(count, key=word)
+
         data.clear()
         del data
         pbar.close()
@@ -165,7 +146,9 @@ def tmp_to_database():
                 g2tmp_paths.append(p)
             if 'gram3' in filename:
                 g3tmp_paths.append(p)
-    
+
+    mmkv.MMKV.initializeMMKV(kMMKV_DATABASE, mmkv.MMKVLogLevel.NoLog)
+
     print('Producing database for Uni Gram')
     _produce_database_in_memory(g1tmp_paths, kTransition1gram)
     # _produce_database_for(g1tmp_paths, kTransition1gram)
@@ -213,18 +196,18 @@ def process_line(s: str):
 def gen_py_words_json():
     print('|---生成拼音到 Gram 数据')
     transition_1gram_data.clear()
-
-    env1 = lmdb.open(kTransition1gram, 536870912000, subdir=False)
+    kv = mmkv.MMKV(kTransition1gram)
     print('|---解压缩 Uni-Gram')
 
-    with env1.begin() as t:
-        pbar = tqdm.tqdm(total=env1.stat()['entries'])
-        for k, count in t.cursor():
-            pbar.update()
-            transition_1gram_data[k.decode(
-                encoding=kGB18030)] = struct.unpack('i', count)[0]
-        pbar.close()
-    env1.close()
+    ks = kv.keys()
+    pbar = tqdm.tqdm(total=len(ks))
+
+    for k in ks:
+        pbar.update()
+        count = kv.getInt(k)
+        transition_1gram_data[k] = count
+    pbar.close()
+
     print('|--- 写入文件...')
     target = open(WORD_FREQ, mode='w', encoding='utf8')
     gram1data = []
