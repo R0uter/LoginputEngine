@@ -1,15 +1,15 @@
 from tqdm import tqdm
-import mmkv
 import utility
-import struct
 import gc
+import os
+import multiprocessing
 
 WORD_FREQ = './result_files/word_freq.txt'
 GRAM1FILE_COUNT = './result_files/1gram_count.json'
-kTransition1gram = '1gram_transition_count'
-kTransition2gram = '2gram_transition_count'
-kTransition3gram = '3gram_transition_count'
-kMMKV_DATABASE = './result_files/transition_count'
+
+kTransition1gram = './result_files/transition_count/1gram_transition_count.txt'
+kTransition2gram = './result_files/transition_count/2gram_transition_count.txt'
+kTransition3gram = './result_files/transition_count/3gram_transition_count.txt'
 
 GRAM1FILE = './result_files/1gram_transition.json'
 GRAM2FILE = './result_files/2gram_transition.json'
@@ -23,9 +23,9 @@ pyData = {}
 
 # 调整这里的三个值来裁剪转移数据库大小到期望的大小，理论上剪的越少结果越好，但也要考虑到实际体积需求
 # 这个比例是对应矩阵的中所有条目的平均出现次数的倍率，比如设定为 1，就是去掉比平均数低的所有条目，0.5就是比平均数一半还低的所有条目。
-G1CUT_RATE = 1
-G2CUT_RATE = 70
-G3CUT_RATE = 75
+G1CUT_RATE = 0.5
+G2CUT_RATE = 40
+G3CUT_RATE = 55
 
 # jieba+words with hmm 加上新闻语料超大词库
 # 1 25 16 large:86.7 small: 91.9 体积：144.3
@@ -38,27 +38,32 @@ G3CUT_RATE = 75
 
 
 
-def smooth3gram():
+def smooth3gram(gram1data):
     data = {}
 
     total_count = 0
-    kv = mmkv.MMKV(kTransition3gram)
     max_count = 0
-    keys = kv.keys()
-    all = len(keys)
+
+    all = os.path.getsize(kTransition3gram)
+    pbar = tqdm(total= all * 2)
+    f = open(kTransition3gram, 'r')
     print('|---Counting items...')
-    for k in keys:
-        max_count += kv.getInt(k)
+    for line in f:
+        pbar.update(len(line))
+        _, count = line.strip().split('\t')
+        max_count += int(count)
 
     max_count /= all
     max_count *= G3CUT_RATE
-    pbar = tqdm(total=all)
-    print('|---Now removing any item that below ', max_count)
 
-    for k in keys:
-        count = kv.getInt(k)
+    print('|---Now removing any item that below ', max_count)
+    f.seek(0,0)
+    for line in f:
+        pbar.update(len(line))
+        k, c = line.strip().split('\t')
+        count = int(c)
         if count < max_count: continue
-        f, m, t = k.decode(kGB18030).split('_')
+        f, m, t = k.split('_')
         if len(f) == 0 or len(t) == 0 or len(m) == 0: continue
         data.setdefault(t, {})
         data[t].setdefault(m, {})
@@ -67,33 +72,36 @@ def smooth3gram():
 
     utility.writejson2file(data, GRAM3FILE)
     pbar.close()
+    f.close()
     data.clear()
-    kv.clearMemoryCache()
     gc.collect()
-    print('Tri-gram data count:', all, 'trimed count: ', total_count)
+    print('Tri-gram data count:', all, ' → ', total_count)
 
 
-def smooth2gram():
+def smooth2gram(gram1data):
     data = {}
     total_count = 0
     max_count = 0
     print('|---Counting items...')
-    kv = mmkv.MMKV(kTransition2gram)
-    keys = kv.keys()
-    all = len(keys)
-    for k in keys:
-        max_count += kv.getInt(k)
+    all = os.path.getsize(kTransition3gram)
+    pbar = tqdm(total=all * 2)
+    f = open(kTransition3gram, 'r')
+
+    for line in f:
+        pbar.update(len(line))
+        _, count = line.strip().split('\t')
+        max_count += int(count)
 
     max_count /= all
     max_count *= G2CUT_RATE
     print('|---Now removing any item that below ', max_count)
-
-    pbar = tqdm(total=all)
-
-    for k in keys:
-        count = kv.getInt(k)
+    f.seek(0,0)
+    for line in f:
+        pbar.update(len(line))
+        k, c = line.strip().split('\t')
+        count = int(c)
         if count < max_count: continue
-        f, t = k.decode(kGB18030).split('_')
+        f, t = k.split('_')
         if len(f) == 0 or len(t) == 0: continue
         data.setdefault(t, {})
         data[t][f] = count / gram1data[f]
@@ -101,13 +109,13 @@ def smooth2gram():
 
     utility.writejson2file(data, GRAM2FILE)
     pbar.close()
+    f.close()
     data.clear()
-    kv.clearMemoryCache()
     gc.collect()
-    print('bi-gram data count:', all, 'trimed count: ', total_count)
+    print('bi-gram data count:', all, ' → ', total_count)
 
 
-def smooth1gram():
+def smooth1gram(gram1data):
     data = {}
     all_count = 0
     min_value = 999999999.
@@ -122,6 +130,7 @@ def smooth1gram():
     for word in list(gram1data.keys()):
         pbar.update(0.5)
         if word in words_to_delete: continue
+        if len(word) > 4: continue
         n = gram1data[word] / all_count
         data[word] = n
         min_value = min(n, min_value)
@@ -132,7 +141,7 @@ def smooth1gram():
 
     pbar.close()
     utility.writejson2file(data, GRAM1FILE)
-    print('uni-gram data count:', len(gram1data), 'trimed count:', len(data))
+    print('uni-gram data count:', len(gram1data), ' → ', len(data))
 
 
 def gen_words2delete():
@@ -168,19 +177,26 @@ def gen_words2delete():
 
 
 def process():
-    mmkv.MMKV.initializeMMKV(kMMKV_DATABASE)
     print('🤟 Start to load counted data...')
     print('Loading...1/2')
     gen_words2delete()
     print('Loading...2/2')
     print('Slim and smooth uni-gram data')
-    smooth1gram()
+    p1 = multiprocessing.Process(target=smooth1gram, args=(gram1data,))
     print('Slim and smooth bi-gram data')
-    smooth2gram()
+    p2 = multiprocessing.Process(target=smooth2gram, args=(gram1data,))
     print('Slim and smooth tri-gram data')
-    smooth3gram()
-    
+    p3 = multiprocessing.Process(target=smooth3gram, args=(gram1data,))
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p1.join()
+    p2.join()
+    p3.join()
+
     print('😃 Done!')
+
 
 if __name__ == '__main__':
     process()

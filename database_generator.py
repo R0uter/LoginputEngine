@@ -7,6 +7,8 @@ import struct
 import math
 import sqlite3
 import res.pinyin_data
+import re
+import multiprocessing
 
 GRAM1FILE = './result_files/1gram_transition.json'
 GRAM2FILE = './result_files/2gram_transition.json'
@@ -19,6 +21,50 @@ SQLITE_DIR = './result_files/db.sqlite'
 data_to_write = {}
 
 MAX_WORD_LENGTH = 8
+
+def genPyTransition():
+    g1 = utility.readjsondatafromfile(GRAM1FILECOUNT)
+    data = {}
+    pbar = tqdm.tqdm(total=len(g1))
+    for word, count in g1.items():
+        pbar.update()
+        pylist = utility.get_pinyin_list(word)
+
+        if not re.match('[A-z]', ''.join(pylist)):
+            continue
+
+        for i in range(0,len(pylist)):
+            data.setdefault(pylist[i], 0)
+            data[pylist[i]] += count
+
+            if i+1 < len(pylist):
+                k = "{}_{}".format(pylist[i], pylist[i+1])
+                data.setdefault(k, 0)
+                data[k] += count
+
+    pbar.close()
+    all_count = 0
+    min_value = 999999999.
+    max_value = 0.
+
+    pbar = tqdm.tqdm(total=len(data))
+
+    for word, v in data.items():
+        pbar.update(0.5)
+        all_count += v
+
+    for word in list(data.keys()):
+        pbar.update(0.5)
+        n = data[word] / all_count
+        data[word] = n
+        min_value = min(n, min_value)
+        max_value = max(n, max_value)
+
+    data['min_value'] = min_value
+    data['max_value'] = max_value
+    pbar.close()
+    utility.writejson2file(data, PY_TRANSITION_COUNT)
+    utility.writePlist2File(data, "./result_files/py_transition_count.plist")
 
 
 def _get_data_ready():
@@ -115,10 +161,12 @@ def _writePYDatabase():
 
 
 def writeLMDB():
-    _writePYDatabase()
+    p = multiprocessing.Process(target=_writePYDatabase)
+    p.start()
+
     coding = 'gb18030'
     if len(data_to_write) == 0:
-        print('💁 There is no cache exists, generating new data...‍')
+        print('💁 There is no cache exists, generating new data...')
         _get_data_ready()
     print('Start writing into LMDB')
     for file in [LMDB_FILE, LMDB_FILE + '-lock']:
@@ -143,6 +191,7 @@ def writeLMDB():
     env.close()
     os.remove(LMDB_FILE+'-tmp')
     pbar.close()
+
+    if p.is_alive():
+        p.join()
     print('🎉️ All done!')
-
-
