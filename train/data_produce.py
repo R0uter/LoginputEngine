@@ -44,7 +44,10 @@ def flush_if_needed(force=False):
     print('|---🧻 Done, now memory alloc: ', int(memory_alloc))
 
 
-def processing_line( q : multiprocessing.Queue):
+def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb:int = 10):
+    global PROCESS_NUM, MEMORY_LIMIT_GB
+    PROCESS_NUM = process_num
+    MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
     while True:
         if q.empty():
             time.sleep(0.1)
@@ -92,8 +95,8 @@ def sumup_tmp_files():
 
 
 def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
-    PROCESS_NUM = process_num
-    MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
+
+
     print('💭开始统计资料总条目数...')
     all_files = []
     total_counts = 0
@@ -117,7 +120,7 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
     queue = multiprocessing.Queue(10000)
     jobs = []
     for _ in range(0, PROCESS_NUM):
-        p = multiprocessing.Process(target=processing_line, args=(queue,))
+        p = multiprocessing.Process(target=processing_line, args=(queue, process_num, mem_limit_gb))
         jobs.append(p)
         p.start()
 

@@ -4,7 +4,7 @@ import psutil
 from pypinyin import Style, pinyin, load_phrases_dict
 import json
 import plistlib
-import jieba as jieba
+import jieba_fast as jieba
 from opencc import OpenCC
 from res import pinyin_data
 import re
@@ -12,9 +12,11 @@ from zhon import hanzi
 
 cc = OpenCC('t2s')
 
+
 def load_user_data_pypinyin(): 
     from res import pypinyinDict
     load_phrases_dict(pypinyinDict.datas)
+
 
 def load_user_data_jieba():
     jieba.load_userdict('./res/new_words.txt')
@@ -120,5 +122,5 @@ def get_current_memory_gb() -> int:
     pid = os.getpid()
     p = psutil.Process(pid)
     # 获取当前进程内存占用，如果快满了就写到硬盘里。
-    info = p.memory_full_info()
-    return info.uss / 1024. / 1024. / 1024.
+    info = p.memory_info()
+    return info.vms / 1024. / 1024. / 1024.
