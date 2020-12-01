@@ -8,7 +8,7 @@ import utility
 import multiprocessing
 import datetime
 import shutil
-import mmkv
+import lmdb
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
@@ -29,25 +29,31 @@ transition_1gram_data = {}
 transition_2gram_data = {}
 transition_3gram_data = {}
 
-kTransition1gram = '1gram_transition_count'
-kTransition2gram = '2gram_transition_count'
-kTransition3gram = '3gram_transition_count'
+kTransition1gram = '/1gram_transition_count.mdb'
+kTransition2gram = '/2gram_transition_count.mdb'
+kTransition3gram = '/3gram_transition_count.mdb'
 kMMKV_DATABASE = './result_files/transition_count'
 
 kGB18030 = 'gb18030'
-kEndProcess = '-=-=-=-EOF=-=-=-=-'
+
 last_time_flush_check = datetime.datetime.now()
 
 
 def _produce_database_for(paths, env_path):
-        mmkv.MMKV.initializeMMKV(kMMKV_DATABASE)
-        kv = mmkv.MMKV(env_path, mmkv.MMKVMode.MultiProcess)
+        global last_time_flush_check
+        env = lmdb.open(kMMKV_DATABASE + env_path + '-tmp',
+                        536870912000,
+                        subdir=False,
+                        writemap=True,
+                        map_async=True,
+                        lock=False)
+
         all = 0
         for p in paths:
             all += os.path.getsize(p)
         pbar = tqdm.tqdm(total=all)
         for p in paths:
-            with open(p, mode='r', encoding=kGB18030) as f:
+            with open(p, mode='r', encoding=kGB18030) as f, env.begin(write=True) as t:
                 for line in f:
                     pbar.update(len(line))
                     try:
@@ -55,32 +61,36 @@ def _produce_database_for(paths, env_path):
                         count = int(valueStr)
                     except:
                         continue
+                    key = word.encode()
+                    c = t.get(key)
+                    if c is not None:
+                        count += struct.unpack('i', c)[0]
+                    t.put(key, struct.pack("i", count), dupdata=False)
 
-                    c = kv.getInt(word)
-                    kv.set(count+c, key=word)
-            kv.clearMemoryCache()
         pbar.close()
 
-        keys = kv.keys()
-        pbar = tqdm.tqdm(total=len(keys))
+        length = env.stat()["entries"]
+        pbar = tqdm.tqdm(total=length)
         with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f:
-            for k in keys:
-                f.write("{}\t{}\n".format(k, kv.getInt(k)))
-                pbar.update()
+            with env.begin(write=True) as t:
+                cur = t.cursor()
+                for k,v in cur:
+                    f.write("{}\t{}\n".format(k.decode(), v))
+                    pbar.update()
+
+                cur.close()
+
 
         pbar.close()
-
-        kv.sync()
-        keys.clear()
+        env.close()
         gc.collect()
-        os.remove('{}/{}'.format(kMMKV_DATABASE, env_path))
-        os.remove('{}/{}.crc'.format(kMMKV_DATABASE, env_path))
+
+        os.remove(kMMKV_DATABASE + env_path + '-tmp')
 
 
 # 直接读取缓存并在内存中处理合并，然后一次性写入数据库（内存足够大就用这个，比较快）
 def _produce_database_in_memory(paths, env_path):
-        mmkv.MMKV.initializeMMKV(kMMKV_DATABASE)
-        kv = mmkv.MMKV(env_path)
+
         data = {}
         all = 0
         for p in paths:
@@ -102,27 +112,16 @@ def _produce_database_in_memory(paths, env_path):
         pbar.close()
 
         pbar = tqdm.tqdm(total=len(data))
-        for word, count in data.items():
-            pbar.update()
-            kv.set(count, key=word)
+        with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f:
+            for word, count in data.items():
+                f.write("{}\t{}\n".format(word, count))
+                pbar.update()
 
         data.clear()
         del data
         pbar.close()
 
-        keys = kv.keys()
-        pbar = tqdm.tqdm(total=len(keys))
-        with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f:
-            for k in keys:
-                f.write("{}\t{}\n".format(k, kv.getInt(k)))
-                pbar.update()
-
-        pbar.close()
-        kv.sync()
-        keys.clear()
         gc.collect()
-        os.remove('{}/{}'.format(kMMKV_DATABASE, env_path))
-        os.remove('{}/{}.crc'.format(kMMKV_DATABASE, env_path))
 
 
 def flush_if_needed(force: bool = False):
@@ -168,6 +167,9 @@ def flush_if_needed(force: bool = False):
 
 def tmp_to_database():
     deleteMBD()
+
+    if not os.path.exists(kMMKV_DATABASE):
+        os.mkdir(kMMKV_DATABASE)
 
     g1tmp_paths = []
     g2tmp_paths = []
