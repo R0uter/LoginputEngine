@@ -309,55 +309,6 @@ def gen_py_words_json():
     utility.writejson2file(transition_1gram_data, GRAM1FILE)
 
 
-def mmkvdb_to_json():
-    # 数据太大了，几乎不能写入 json，如果是小数据，可以用这个把生成的 mdb 转换成json
-    global transition_1gram_data, transition_2gram_data, transition_3gram_data
-    transition_1gram_data.clear()
-    transition_2gram_data.clear()
-    transition_3gram_data.clear()
-
-    kv1 = mmkv.MMKV(kTransition1gram)
-    kv2 = mmkv.MMKV(kTransition2gram)
-    kv3 = mmkv.MMKV(kTransition3gram)
-
-    print('|---解压缩 Uni-Gram')
-    k1 = kv1.keys()
-    pbar = tqdm.tqdm(total=len(k1))
-    for k in k1:
-        pbar.update()
-        transition_1gram_data[k] = kv1.getInt(k)
-    pbar.close()
-    utility.writejson2file(transition_1gram_data, GRAM1FILE)
-    transition_1gram_data.clear()
-    gc.collect()
-    print('|---解压缩 Bi-Gram')
-    k2 = kv2.keys()
-    pbar = tqdm.tqdm(total=len(k2))
-    for k in k2:
-        pbar.update()
-        l, o = k.split('_')
-        transition_2gram_data.setdefault(o, {})
-        transition_2gram_data[o].setdefault(l, kv2.getInt(k))
-    pbar.close()
-    utility.writejson2file(transition_2gram_data, GRAM2FILE)
-    transition_2gram_data.clear()
-    gc.collect()
-
-    print('|---解压缩 Tri-Gram')
-    k3 = kv3.keys()
-    pbar = tqdm.tqdm(total=len(k3))
-    for k in k3:
-        pbar.update()
-        ll, l, o = k.split('_')
-        transition_3gram_data.setdefault(o, {})
-        transition_3gram_data[o].setdefault(l, {})
-        transition_3gram_data[o][l].setdefault(ll, kv3.getInt(k))
-    pbar.close()
-    utility.writejson2file(transition_3gram_data, GRAM3FILE)
-    transition_3gram_data.clear()
-    gc.collect()
-
-
 def deleteMBD():
     shutil.rmtree(kMMKV_DATABASE, True)
 
