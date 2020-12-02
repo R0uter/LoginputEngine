@@ -7,7 +7,6 @@ from zhon import hanzi
 import string
 import tqdm
 import utility
-import lmdb
 import multiprocessing
 import datetime
 
@@ -21,7 +20,7 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '['+hanzi.punctuation + string.printable+']'
+ALLPUNC = '[{}{}{}]'.format(hanzi.punctuation,string.whitespace,"A-Za-z0-9!\"#\$\%\&'\(\)\*\+\,-\.\/:;<=>\?@\[\]\^_`\{\|\}~")
 
 lines_cache = []
 
