@@ -124,11 +124,11 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
         if one in gram3data:
             if last_one in gram3data[one]:
                 if last_last_one not in gram3data[one][last_one]:
-                    return _get_gram_2_weight_from(last_one, one)
+                    return _get_gram_2_weight_from(last_one, one) * 0.9
 
                 return gram3data[one][last_one][last_last_one]
 
-        return _get_gram_2_weight_from(last_one, one)
+        return _get_gram_2_weight_from(last_one, one) * 0.9
 
     if Database_Type == kLMDB:
         key = '{}_{}_{}'.format(last_last_one, last_one, one).encode(kGB18030)
