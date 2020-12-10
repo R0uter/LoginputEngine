@@ -7,9 +7,9 @@ import multiprocessing
 WORD_FREQ = './result_files/word_freq.txt'
 GRAM1FILE_COUNT = './result_files/1gram_count.json'
 
-kTransition1gram = './result_files/transition_count/1gram_transition_count.txt'
-kTransition2gram = './result_files/transition_count/2gram_transition_count.txt'
-kTransition3gram = './result_files/transition_count/3gram_transition_count.txt'
+kTransition1gram = './result_files/transition_count/1gram_transition_count.mdb.txt'
+kTransition2gram = './result_files/transition_count/2gram_transition_count.mdb.txt'
+kTransition3gram = './result_files/transition_count/3gram_transition_count.mdb.txt'
 
 GRAM1FILE = './result_files/1gram_transition.json'
 GRAM2FILE = './result_files/2gram_transition.json'
@@ -23,43 +23,36 @@ pyData = {}
 
 # 调整这里的三个值来裁剪转移数据库大小到期望的大小，理论上剪的越少结果越好，但也要考虑到实际体积需求
 # 这个比例是对应矩阵的中所有条目的平均出现次数的倍率，比如设定为 1，就是去掉比平均数低的所有条目，0.5就是比平均数一半还低的所有条目。
-G1CUT_RATE = 0.5
-G2CUT_RATE = 40
-G3CUT_RATE = 55
-
-# jieba+words with hmm 加上新闻语料超大词库
-# 1 25 16 large:86.7 small: 91.9 体积：144.3
-# 0.7 30 35 large:86.9 small: 91.48 体积：77.6
-# 0.7 40 45 large:86.8 small: 91.48 体积：56.5
-# 1 50 55 large:86.65 small: 91.47 体积：41.7
-# 1 70 75 目前这个比例最优 large:86.44 small: 91.48 体积：30.4
-
-
-
+G1CUT_RATE = 0.9
+G2CUT_RATE = 60
+G3CUT_RATE = 65
 
 
 def smooth3gram(gram1data):
     data = {}
-
     total_count = 0
     max_count = 0
-
-    all = os.path.getsize(kTransition3gram)
-    pbar = tqdm(total= all * 2)
-    f = open(kTransition3gram, 'r')
+    all = 0
+    pbar = tqdm(total= os.path.getsize(kTransition3gram) / 2)
+    t3file = open(kTransition3gram, 'r')
     print('|---Counting items...')
-    for line in f:
+    for line in t3file:
         pbar.update(len(line))
         _, count = line.strip().split('\t')
         max_count += int(count)
+        all += 1
+
+    pbar.close()
+    pbar = tqdm(total=all)
 
     max_count /= all
     max_count *= G3CUT_RATE
 
     print('|---Now removing any item that below ', max_count)
-    f.seek(0,0)
-    for line in f:
-        pbar.update(len(line))
+    t3file.seek(0,0)
+
+    for line in t3file:
+        pbar.update()
         k, c = line.strip().split('\t')
         count = int(c)
         if count < max_count: continue
@@ -72,7 +65,7 @@ def smooth3gram(gram1data):
 
     utility.writejson2file(data, GRAM3FILE)
     pbar.close()
-    f.close()
+    t3file.close()
     data.clear()
     gc.collect()
     print('Tri-gram data count:', all, ' → ', total_count)
@@ -83,25 +76,31 @@ def smooth2gram(gram1data):
     total_count = 0
     max_count = 0
     print('|---Counting items...')
-    all = os.path.getsize(kTransition3gram)
-    pbar = tqdm(total=all * 2)
-    f = open(kTransition3gram, 'r')
+    all = 0
+    pbar = tqdm(total=os.path.getsize(kTransition2gram) / 2)
+    t2file = open(kTransition2gram, 'r')
 
-    for line in f:
+    for line in t2file:
         pbar.update(len(line))
         _, count = line.strip().split('\t')
         max_count += int(count)
+        all += 1
+
+    pbar.close()
+    pbar = tqdm(total=all)
 
     max_count /= all
     max_count *= G2CUT_RATE
     print('|---Now removing any item that below ', max_count)
-    f.seek(0,0)
-    for line in f:
-        pbar.update(len(line))
+    t2file.seek(0,0)
+
+    for line in t2file:
+        pbar.update()
         k, c = line.strip().split('\t')
         count = int(c)
         if count < max_count: continue
-        f, t = k.split('_')
+        try: f, t = k.split('_')
+        except: continue
         if len(f) == 0 or len(t) == 0: continue
         data.setdefault(t, {})
         data[t][f] = count / gram1data[f]
@@ -109,13 +108,13 @@ def smooth2gram(gram1data):
 
     utility.writejson2file(data, GRAM2FILE)
     pbar.close()
-    f.close()
+    t2file.close()
     data.clear()
     gc.collect()
     print('bi-gram data count:', all, ' → ', total_count)
 
 
-def smooth1gram(gram1data):
+def smooth1gram(gram1data, words_to_delete):
     data = {}
     all_count = 0
     min_value = 999999999.
@@ -182,7 +181,7 @@ def process():
     gen_words2delete()
     print('Loading...2/2')
     print('Slim and smooth uni-gram data')
-    p1 = multiprocessing.Process(target=smooth1gram, args=(gram1data,))
+    p1 = multiprocessing.Process(target=smooth1gram, args=(gram1data, words_to_delete))
     print('Slim and smooth bi-gram data')
     p2 = multiprocessing.Process(target=smooth2gram, args=(gram1data,))
     print('Slim and smooth tri-gram data')
