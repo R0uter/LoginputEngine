@@ -122,5 +122,5 @@ def get_current_memory_gb() -> int:
     pid = os.getpid()
     p = psutil.Process(pid)
     # 获取当前进程内存占用，如果快满了就写到硬盘里。
-    info = p.memory_info()
-    return info.vms / 1024. / 1024. / 1024.
+    info = p.memory_full_info()
+    return info.uss / 1024. / 1024. / 1024.

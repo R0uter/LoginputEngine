@@ -1,5 +1,5 @@
 import os
-import operator
+# import mmkv mmkv不可取，iOS中不能使用只读模式
 import lmdb
 import utility
 import tqdm
@@ -9,6 +9,9 @@ import sqlite3
 import res.pinyin_data
 import re
 import multiprocessing
+
+GRAM1FILECOUNT = './result_files/1gram_count.json'
+PY_TRANSITION_COUNT = './result_files/py_transition_count.json'
 
 GRAM1FILE = './result_files/1gram_transition.json'
 GRAM2FILE = './result_files/2gram_transition.json'

@@ -20,11 +20,6 @@ GRAM1FILE = './result_files/1gram_count.json'
 GRAM2FILE = './result_files/2gram_count.json'
 GRAM3FILE = './result_files/3gram_count.json'
 
-GRAMTEMP_DIR = './result_files/temp'
-GRAM1TEMP_FILE = './result_files/temp/gram1'
-GRAM2TEMP_FILE = './result_files/temp/gram2'
-GRAM3TEMP_FILE = './result_files/temp/gram3'
-
 transition_1gram_data = {}
 transition_2gram_data = {}
 transition_3gram_data = {}
@@ -39,90 +34,58 @@ kGB18030 = 'gb18030'
 last_time_flush_check = datetime.datetime.now()
 
 
-def _produce_database_for(paths, env_path):
+def _produce_database_for(env_path):
         global last_time_flush_check
-        env = lmdb.open(kMMKV_DATABASE + env_path + '-tmp',
+        env = lmdb.open(kMMKV_DATABASE + env_path,
                         536870912000,
                         subdir=False,
                         writemap=True,
                         map_async=True,
                         lock=False)
 
-        all = 0
-        for p in paths:
-            all += os.path.getsize(p)
-        pbar = tqdm.tqdm(total=all)
-        for p in paths:
-            with open(p, mode='r', encoding=kGB18030) as f, env.begin(write=True) as t:
-                for line in f:
-                    pbar.update(len(line))
-                    try:
-                        word, valueStr = line.strip().split('\t')
-                        count = int(valueStr)
-                    except:
-                        continue
-                    key = word.encode()
-                    c = t.get(key)
-                    if c is not None:
-                        count += struct.unpack('i', c)[0]
-                    t.put(key, struct.pack("i", count), dupdata=False)
-
-        pbar.close()
-
         length = env.stat()["entries"]
         pbar = tqdm.tqdm(total=length)
-        with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f:
-            with env.begin(write=True) as t:
-                cur = t.cursor()
-                for k,v in cur:
-                    f.write("{}\t{}\n".format(k.decode(), v))
-                    pbar.update()
 
-                cur.close()
+        with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f, env.begin(write=True) as t:
+            cur = t.cursor()
+            for k,v in cur:
+                f.write("{}\t{}\n".format(k.decode(), struct.unpack('i', v)[0]))
+                pbar.update()
 
+            cur.close()
 
         pbar.close()
         env.close()
         gc.collect()
 
-        os.remove(kMMKV_DATABASE + env_path + '-tmp')
+        os.remove(kMMKV_DATABASE + env_path)
+        os.remove(kMMKV_DATABASE + env_path + '-lock')
 
 
-# 直接读取缓存并在内存中处理合并，然后一次性写入数据库（内存足够大就用这个，比较快）
-def _produce_database_in_memory(paths, env_path):
+def _data_to_mdb(data:dict, mdb:str, pbar:tqdm):
+    env = lmdb.open(kMMKV_DATABASE + mdb,
+                    536870912000,
+                    subdir=False,
+                    writemap=True,
+                    map_async=True,
+                    readahead=False,
+                    lock=True)
 
-        data = {}
-        all = 0
-        for p in paths:
-            all += os.path.getsize(p)
-        pbar = tqdm.tqdm(total=all)
-        for p in paths:
-            with open(p, mode='r', encoding=kGB18030) as f:
-                for line in f:
-                    pbar.update(len(line))
-                    try:
-                        word, valueStr = line.strip().split('\t')
-                    except:
-                        continue
-                    count = int(valueStr)
-                    if word in data:
-                        data[word] += count
-                    else:
-                        data[word] = count
-        pbar.close()
+    with env.begin(write=True) as t:
+        for word, count in data.items():
+            pbar.update()
 
-        pbar = tqdm.tqdm(total=len(data))
-        with open("{}/{}.txt".format(kMMKV_DATABASE, env_path), 'w') as f:
-            for word, count in data.items():
-                f.write("{}\t{}\n".format(word, count))
-                pbar.update()
-
-        data.clear()
-        del data
-        pbar.close()
-
-        gc.collect()
-
+            key = word.encode()
+            try:
+                c = t.get(key)
+                if c is not None:
+                    count += struct.unpack('i', c)[0]
+                t.put(key, struct.pack("i", count), dupdata=False)
+            except lmdb.BadValsizeError:
+                print('遇到超长转移{}，跳过...'.format(word))
+            except BaseException as e:
+                print(e)
+    env.close()
 
 def flush_if_needed(force: bool = False):
     global transition_1gram_data, transition_2gram_data, transition_3gram_data, last_time_flush_check
@@ -137,8 +100,7 @@ def flush_if_needed(force: bool = False):
           utility.get_current_memory_gb() >= MEMORY_LIMIT_GB, 'Force to: ',
           force)
         return
-    if not os.path.exists(GRAMTEMP_DIR):
-        os.makedirs(GRAMTEMP_DIR)
+
     print('|---Current memory alloc: ', int(utility.get_current_memory_gb()))
     print('|---Needs flush to disk: ',
           utility.get_current_memory_gb() >= MEMORY_LIMIT_GB, 'Force to: ',
@@ -148,56 +110,33 @@ def flush_if_needed(force: bool = False):
                                                                             len(transition_2gram_data), 
                                                                             len(transition_3gram_data), 
                                                                             pid))
-    tail = '-{}'.format(pid)
-    with open(GRAM1TEMP_FILE+tail, mode='a', encoding=kGB18030) as f:
-        for word, count in transition_1gram_data.items():
-            f.write('{}\t{}\n'.format(word, count))
+
+
+    pbar = tqdm.tqdm(total=len(transition_1gram_data)+len(transition_2gram_data)+len(transition_3gram_data))
+
+    _data_to_mdb(transition_1gram_data, kTransition1gram, pbar)
     transition_1gram_data.clear()
-    with open(GRAM2TEMP_FILE+tail, mode='a', encoding=kGB18030) as f:
-        for word, count in transition_2gram_data.items():
-            f.write('{}\t{}\n'.format(word, count))
+    _data_to_mdb(transition_2gram_data, kTransition2gram, pbar)
     transition_2gram_data.clear()
-    with open(GRAM3TEMP_FILE+tail, mode='a', encoding=kGB18030) as f:
-        for word, count in transition_3gram_data.items():
-            f.write('{}\t{}\n'.format(word, count))
+    _data_to_mdb(transition_3gram_data, kTransition3gram, pbar)
     transition_3gram_data.clear()
+
+    pbar.close()
     gc.collect()
     print('|---🧻 Done, now memory alloc: {:.2f}'.format(utility.get_current_memory_gb()))
 
 
+
 def tmp_to_database():
-    deleteMBD()
-
-    if not os.path.exists(kMMKV_DATABASE):
-        os.mkdir(kMMKV_DATABASE)
-
-    g1tmp_paths = []
-    g2tmp_paths = []
-    g3tmp_paths = []
-    for root, directories, filenames in os.walk(GRAMTEMP_DIR):
-        for filename in filenames:
-            p = os.path.join(root, filename)
-            if 'gram1' in filename:
-                g1tmp_paths.append(p)
-            if 'gram2' in filename:
-                g2tmp_paths.append(p)
-            if 'gram3' in filename:
-                g3tmp_paths.append(p)
-
 
     print('Producing database for Uni Gram')
-    p1 = multiprocessing.Process(target=_produce_database_in_memory, args=(g1tmp_paths, kTransition1gram))
-    # p1 = multiprocessing.Process(target=_produce_database_for, args=(g1tmp_paths, kTransition1gram))
+    p1 = multiprocessing.Process(target=_produce_database_for, args=(kTransition1gram,))
 
     print('Producing database for Bi Gram')
-    p2 = multiprocessing.Process(target=_produce_database_for, args=(g2tmp_paths, kTransition2gram))
-    # p2 = multiprocessing.Process(target=_produce_database_in_memory, args=(g2tmp_paths, kTransition2gram))
+    p2 = multiprocessing.Process(target=_produce_database_for, args=(kTransition2gram,))
 
     print('Producing database for Tri Gram')
-    p3 = multiprocessing.Process(target=_produce_database_for, args=(g3tmp_paths, kTransition3gram))
-    # p3 = multiprocessing.Process(target=_produce_database_in_memory, args=(g3tmp_paths, kTransition3gram))
-
-    # shutil.rmtree(GRAMTEMP_DIR, True)
+    p3 = multiprocessing.Process(target=_produce_database_for, args=(kTransition3gram,))
 
     p1.start()
     p2.start()
@@ -206,7 +145,7 @@ def tmp_to_database():
     p2.join()
     p3.join()
 
-
+# 分段处理语料文件，并发多进程加快处理速度
 def processing_line(q:multiprocessing.Queue, filePath:str, start:int, end:int, process_num:int = 10, mem_limit_gb:int = 10):
     utility.load_user_data_jieba()
     utility.load_user_data_pypinyin()
@@ -221,8 +160,8 @@ def processing_line(q:multiprocessing.Queue, filePath:str, start:int, end:int, p
     processingCount = 0
 
     while True:
+        processingCount += 1
         try:
-            processingCount += 1
             if f.read(1) == '\n':break
         except:
             continue
@@ -230,20 +169,21 @@ def processing_line(q:multiprocessing.Queue, filePath:str, start:int, end:int, p
 
     while True:
         line = f.readline()
+        processingCount += len(line)
 
         process_line(line)
 
-        processingCount += len(line)
-        if (datetime.datetime.now() - lastTime).seconds >= 10:
+        if (datetime.datetime.now() - lastTime).seconds >= 3:
             q.put(processingCount, False)
             processingCount = 0
+            lastTime = datetime.datetime.now()
 
         if f.tell() >= end:break
 
     f.close()
     flush_if_needed(force=True)
 
-
+# 统计转移频率
 def process_line(s: str):
     flush_if_needed()
     words = utility.cut_line(s.strip())
@@ -275,7 +215,11 @@ def gen_py_words_json():
     with open(path, 'r') as f:
         for line in f:
             pbar.update()
-            k, c = line.strip().split('\t')
+            try:
+                k, c = line.strip().split('\t')
+            except:
+                continue
+
             count = int(c)
             transition_1gram_data[k] = count
 
@@ -326,33 +270,33 @@ def process(process_num:int = 10, mem_limit_gb:int = 10):
         🤓 文本总长度 {} 字符，共启动 {} 进程，每个进程分段长度 {}
 
         正在启动进程...
-        '''.format(length, process_num, length/process_num))
-
+        '''.format(length, process_num, int(length/process_num)))
+    # 将语料进行分片处理，平均分给所有进程。
     for i in range(0, PROCESS_NUM):
         p = multiprocessing.Process(target=processing_line, args=(queue,
                                                                   DATA_TXT_FILE,
-                                                                  length/process_num * i,
-                                                                  length/process_num * (i+1),
+                                                                  int(length/process_num) * i,
+                                                                  int(length/process_num) * (i+1),
                                                                   process_num, mem_limit_gb ))
         jobs.append(p)
         p.start()
 
-    print('👓 开始统计转移...')
-    pbar = tqdm.tqdm(total=length)
+    pbar = tqdm.tqdm(total=length/2)
 
     for p in jobs:
         while p.is_alive():
             try:
                 count = queue.get(False)
                 pbar.update(count)
+                time.sleep(1)
             except:
                 pass
 
     pbar.close()
 
-    print('Waiting temp file to database')
+    print('合并统计数据')
     tmp_to_database()
-    print('Generating py to words json file')
+    print('生成拼音到词条的数据')
     gen_py_words_json()
     print('🎉️完成！')
 

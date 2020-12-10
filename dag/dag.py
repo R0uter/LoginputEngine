@@ -19,7 +19,7 @@ GRAM3FILE = './result_files/3gram_transition.json'
 PY2WORDSFILE = './result_files/pinyin2words.json'
 
 py2words_data, gram1data, gram2data, gram3data = {}, {}, {}, {}
-env = None
+env: lmdb.Environment = None
 con = None
 
 
@@ -124,11 +124,11 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
         if one in gram3data:
             if last_one in gram3data[one]:
                 if last_last_one not in gram3data[one][last_one]:
-                    return _get_gram_2_weight_from(last_one, one) * 0.9
+                    return _get_gram_2_weight_from(last_one, one)
 
                 return gram3data[one][last_one][last_last_one]
 
-        return _get_gram_2_weight_from(last_one, one) * 0.9
+        return _get_gram_2_weight_from(last_one, one)
 
     if Database_Type == kLMDB:
         key = '{}_{}_{}'.format(last_last_one, last_one, one).encode(kGB18030)
