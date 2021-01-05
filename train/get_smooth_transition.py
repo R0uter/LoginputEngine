@@ -27,8 +27,7 @@ G1CUT_RATE = 0.9
 G2CUT_RATE = 60
 G3CUT_RATE = 65
 
-
-def smooth3gram(gram1data):
+def smooth3gram():
     data = {}
     total_count = 0
     max_count = 0
@@ -45,8 +44,7 @@ def smooth3gram(gram1data):
     pbar.close()
     pbar = tqdm(total=all)
 
-    max_count /= all
-    max_count *= G3CUT_RATE
+    cut_count = max_count / all * G2CUT_RATE
 
     print('|---Now removing any item that below ', max_count)
     t3file.seek(0,0)
@@ -55,14 +53,16 @@ def smooth3gram(gram1data):
         pbar.update()
         k, c = line.strip().split('\t')
         count = int(c)
-        if count < max_count: continue
+        if count < cut_count: continue
         f, m, t = k.split('_')
         if len(f) == 0 or len(t) == 0 or len(m) == 0: continue
         data.setdefault(t, {})
         data[t].setdefault(m, {})
-        data[t][m][f] = count / gram1data[f]
+        data[t][m][f] = count / max_count#gram1data[f]
         total_count += 1
-
+    data['_'] = {}
+    data['_']['_'] = {}
+    data['_']['_']['_'] = 1/max_count
     utility.writejson2file(data, GRAM3FILE)
     pbar.close()
     t3file.close()
@@ -71,7 +71,7 @@ def smooth3gram(gram1data):
     print('Tri-gram data count:', all, ' → ', total_count)
 
 
-def smooth2gram(gram1data):
+def smooth2gram():
     data = {}
     total_count = 0
     max_count = 0
@@ -89,23 +89,23 @@ def smooth2gram(gram1data):
     pbar.close()
     pbar = tqdm(total=all)
 
-    max_count /= all
-    max_count *= G2CUT_RATE
-    print('|---Now removing any item that below ', max_count)
+    cut_count = max_count / all * G2CUT_RATE
+    print('|---Now removing any item that below ', cut_count)
     t2file.seek(0,0)
 
     for line in t2file:
         pbar.update()
         k, c = line.strip().split('\t')
         count = int(c)
-        if count < max_count: continue
+        if count < cut_count: continue
         try: f, t = k.split('_')
         except: continue
         if len(f) == 0 or len(t) == 0: continue
         data.setdefault(t, {})
-        data[t][f] = count / gram1data[f]
+        data[t][f] = count / max_count#gram1data[f]
         total_count += 1
-
+    data['_'] = {}
+    data['_']['_'] = 1 / max_count
     utility.writejson2file(data, GRAM2FILE)
     pbar.close()
     t2file.close()
@@ -117,7 +117,6 @@ def smooth2gram(gram1data):
 def smooth1gram(gram1data, words_to_delete):
     data = {}
     all_count = 0
-    min_value = 999999999.
     max_value = 0.
     pbar = tqdm(total=len(gram1data))
 
@@ -132,10 +131,9 @@ def smooth1gram(gram1data, words_to_delete):
         if len(word) > 4: continue
         n = gram1data[word] / all_count
         data[word] = n
-        min_value = min(n, min_value)
         max_value = max(n, max_value)
 
-    data['min_value'] = min_value
+    data['min_value'] = 1/all_count
     data['max_value'] = max_value
 
     pbar.close()
@@ -183,9 +181,9 @@ def process():
     print('Slim and smooth uni-gram data')
     p1 = multiprocessing.Process(target=smooth1gram, args=(gram1data, words_to_delete))
     print('Slim and smooth bi-gram data')
-    p2 = multiprocessing.Process(target=smooth2gram, args=(gram1data,))
+    p2 = multiprocessing.Process(target=smooth2gram)
     print('Slim and smooth tri-gram data')
-    p3 = multiprocessing.Process(target=smooth3gram, args=(gram1data,))
+    p3 = multiprocessing.Process(target=smooth3gram)
 
     p1.start()
     p2.start()

@@ -258,7 +258,8 @@ def deleteMBD():
 
 
 def process(process_num:int = 10, mem_limit_gb:int = 10):
-
+    if not os.path.exists(kMMKV_DATABASE):
+        os.makedirs(kMMKV_DATABASE)
     print('💭开始统计语料总数...')
 
     jobs = []

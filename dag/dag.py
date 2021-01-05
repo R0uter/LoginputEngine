@@ -25,6 +25,10 @@ con = None
 
 def load_data():
     print('Loading data.')
+    global env, con
+    if env: env.close()
+    if con: con.close()
+
     if Database_Type == kRAWDATA:
         global py2words_data, gram1data, gram2data, gram3data
         py2words_data = utility.readjsondatafromfile(PY2WORDSFILE)
@@ -33,7 +37,6 @@ def load_data():
         gram3data = utility.readjsondatafromfile(GRAM3FILE)
 
     if Database_Type == kLMDB:
-        global env, con
         env = lmdb.open(LMDB_FILE,
                         map_size=1048576000,
                         readonly=True,
@@ -88,6 +91,7 @@ def _get_gram_1_weight_from(word: str) -> float:
             data = t.get(word.encode(kGB18030))
             if not data:
                 data = t.get('min_value'.encode(kGB18030))
+                return struct.unpack('d', data)[0] - 9.5
         return struct.unpack('d', data)[0]
 
 
@@ -103,40 +107,33 @@ def _get_words_with_gram_1_weight_from(pinyin: [str]) -> {}:
 
 def _get_gram_2_weight_from(last_one: str, one: str) -> float:
     if Database_Type == kRAWDATA:
-        if one not in gram2data:
-            return _get_gram_1_weight_from(one)
-        if last_one not in gram2data[one]:
-            return _get_gram_1_weight_from(one)
-        return gram2data[one][last_one]
+        if one in gram2data and last_one in gram2data[one]:
+            return gram2data[one][last_one]
+        return gram2data['_']['_']
 
     if Database_Type == kLMDB:
         key = '{}_{}'.format(last_one, one).encode(kGB18030)
         with env.begin() as t:
             data = t.get(key)
-        if data:
-            return struct.unpack('d', data)[0]
-        return _get_gram_1_weight_from(one)
+            if not data:
+                data = t.get('___'.encode(kGB18030))
+        return struct.unpack('d', data)[0]
 
 
 def _get_gram_3_weight_from(last_last_one: str, last_one: str,
                             one: str) -> float:
     if Database_Type == kRAWDATA:
-        if one in gram3data:
-            if last_one in gram3data[one]:
-                if last_last_one not in gram3data[one][last_one]:
-                    return _get_gram_2_weight_from(last_one, one) * 0.9
-
-                return gram3data[one][last_one][last_last_one]
-
-        return _get_gram_2_weight_from(last_one, one) * 0.9
+        if one in gram3data and last_one in gram3data[one] and last_last_one in gram3data[one][last_one]:
+            return gram3data[one][last_one][last_last_one]
+        return gram3data['_']['_']['_']# _get_gram_2_weight_from(last_one, one)
 
     if Database_Type == kLMDB:
         key = '{}_{}_{}'.format(last_last_one, last_one, one).encode(kGB18030)
         with env.begin() as t:
             data = t.get(key)
-        if data:
-            return struct.unpack('d', data)[0]
-        return _get_gram_2_weight_from(last_one, one) * 0.9
+            if not data:
+                data = t.get('_____'.encode(kGB18030))
+        return struct.unpack('d', data)[0]
 
 
 def get_candidates_from(py: str,
@@ -180,10 +177,11 @@ def get_candidates_from(py: str,
                     last_one = prev_item.path[0]
                     for word in words:
                         new_path = prev_item.path + [word]
-                        new_score = _get_gram_2_weight_from(last_one, word)
                         if log:
+                            new_score = _get_gram_2_weight_from(last_one, word) + _get_gram_1_weight_from(word)
                             score = prev_item.score + new_score
                         else:
+                            new_score = _get_gram_2_weight_from(last_one, word) * _get_gram_1_weight_from(word)
                             score = prev_item.score * new_score
                         Graph[to_idx].put(score, new_path)
 
@@ -208,11 +206,15 @@ def get_candidates_from(py: str,
                     last_last_one = prev_item.path[-2]
                     for word in words:
                         new_path = prev_item.path + [word]
-                        new_score = _get_gram_3_weight_from(
-                            last_last_one, last_one, word)
                         if log:
+                            new_score = _get_gram_3_weight_from(last_last_one, last_one, word) + \
+                                        _get_gram_2_weight_from(last_one, word) + \
+                                        _get_gram_1_weight_from(word)
                             score = prev_item.score + new_score
                         else:
+                            new_score = _get_gram_3_weight_from(last_last_one, last_one, word) * \
+                                        _get_gram_2_weight_from(last_one, word) * \
+                                        _get_gram_1_weight_from(word)
                             score = prev_item.score * new_score
                         Graph[to_idx].put(score, new_path)
 
@@ -240,10 +242,13 @@ def evalue(phrase: str, path_num=6, log=False) -> list:
                 for prev_item in prev_paths:
                     last_one = prev_item.path[0]
                     new_path = prev_item.path + [word]
-                    new_score = _get_gram_2_weight_from(last_one, word)
                     if log:
+                        new_score = _get_gram_2_weight_from(last_one, word) + _get_gram_1_weight_from(word)
+
                         score = prev_item.score + new_score
                     else:
+                        new_score = _get_gram_2_weight_from(last_one, word) * _get_gram_1_weight_from(word)
+
                         score = prev_item.score * new_score
                     Graph[to_idx].put(score, new_path)
 
@@ -258,11 +263,15 @@ def evalue(phrase: str, path_num=6, log=False) -> list:
                     last_one = prev_item.path[-1]
                     last_last_one = prev_item.path[-2]
                     new_path = prev_item.path + [word]
-                    new_score = _get_gram_3_weight_from(
-                        last_last_one, last_one, word)
                     if log:
+                        new_score = _get_gram_3_weight_from(last_last_one, last_one, word) + \
+                                    _get_gram_2_weight_from(last_one, word) + \
+                                    _get_gram_1_weight_from(word)
                         score = prev_item.score + new_score
                     else:
+                        new_score = _get_gram_3_weight_from(last_last_one, last_one, word) * \
+                                    _get_gram_2_weight_from(last_one, word) * \
+                                    _get_gram_1_weight_from(word)
                         score = prev_item.score * new_score
                     Graph[to_idx].put(score, new_path)
 
