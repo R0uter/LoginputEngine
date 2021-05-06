@@ -465,6 +465,7 @@ xie = x | ie
 qiong = q | iong
 heng = h | eng
 dang = d | ang
+lo = l | o
 
 
 s2i_dict = {
@@ -880,6 +881,7 @@ s2i_dict = {
         "qiong": qiong,
         "heng": heng,
         "dang": dang,
+        "lo": lo,
         "o": o,
         "b": b,
         "p": p,
@@ -905,6 +907,9 @@ s2i_dict = {
         "c": c,
         "s": s,
 
+        "jv": ju,
+        "qv": qu,
+        "xv": xu,
         "jve": jue,
         "qve": que,
         "lve": lue,
