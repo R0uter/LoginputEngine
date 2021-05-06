@@ -155,7 +155,7 @@ def gen_words2delete():
     pyData = utility.readjsondatafromfile(PY2WORDS_RAW_FILE)
     print('Slim pinyin to words file')
     pbar = tqdm(total=len(pyData))
-    data = {}
+    data = {"lo":["咯"]}
 
     for pinyin in list(pyData.keys()):
         pbar.update()
