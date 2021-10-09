@@ -91,7 +91,7 @@ def _get_gram_1_weight_from(word: str) -> float:
             data = t.get(word.encode(kGB18030))
             if not data:
                 data = t.get('min_value'.encode(kGB18030))
-                return struct.unpack('d', data)[0] - 9.5
+                return struct.unpack('<d', data)[0] - 9.5
         return struct.unpack('d', data)[0]
 
 
@@ -117,7 +117,7 @@ def _get_gram_2_weight_from(last_one: str, one: str) -> float:
             data = t.get(key)
             if not data:
                 data = t.get('___'.encode(kGB18030))
-        return struct.unpack('d', data)[0]
+        return struct.unpack('<d', data)[0]
 
 
 def _get_gram_3_weight_from(last_last_one: str, last_one: str,
@@ -133,7 +133,7 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
             data = t.get(key)
             if not data:
                 data = t.get('_____'.encode(kGB18030))
-        return struct.unpack('d', data)[0]
+        return struct.unpack('<d', data)[0]
 
 
 def get_candidates_from(py: str,
