@@ -6,6 +6,7 @@ import multiprocessing
 
 WORD_FREQ = './result_files/word_freq.txt'
 GRAM1FILE_COUNT = './result_files/1gram_count.json'
+GRAM2FILE_COUNT = './result_files/2gram_count.json'
 
 kTransition1gram = './result_files/transition_count/1gram_transition_count.mdb.txt'
 kTransition2gram = './result_files/transition_count/2gram_transition_count.mdb.txt'
@@ -23,9 +24,10 @@ pyData = {}
 
 # 调整这里的三个值来裁剪转移数据库大小到期望的大小，理论上剪的越少结果越好，但也要考虑到实际体积需求
 # 这个比例是对应矩阵的中所有条目的平均出现次数的倍率，比如设定为 1，就是去掉比平均数低的所有条目，0.5就是比平均数一半还低的所有条目。
-G1CUT_RATE = 0.9
+G1CUT_RATE = 0.4
 G2CUT_RATE = 60
-G3CUT_RATE = 65
+G3CUT_RATE = 60
+
 
 def smooth3gram():
     data = {}
@@ -34,6 +36,7 @@ def smooth3gram():
     all = 0
     pbar = tqdm(total= os.path.getsize(kTransition3gram) / 2)
     t3file = open(kTransition3gram, 'r')
+    gram2data = utility.readjsondatafromfile(GRAM2FILE_COUNT)
     print('|---Counting items...')
     for line in t3file:
         pbar.update(len(line))
@@ -56,9 +59,10 @@ def smooth3gram():
         if count < cut_count: continue
         f, m, t = k.split('_')
         if len(f) == 0 or len(t) == 0 or len(m) == 0: continue
+        if m not in gram2data or f not in gram2data[m]: continue
         data.setdefault(t, {})
         data[t].setdefault(m, {})
-        data[t][m][f] = count / max_count#gram1data[f]
+        data[t][m][f] = count / gram2data[m][f]
         total_count += 1
     data['_'] = {}
     data['_']['_'] = {}
@@ -73,13 +77,14 @@ def smooth3gram():
 
 def smooth2gram():
     data = {}
+    count_data = {}
     total_count = 0
     max_count = 0
     print('|---Counting items...')
     all = 0
     pbar = tqdm(total=os.path.getsize(kTransition2gram) / 2)
     t2file = open(kTransition2gram, 'r')
-
+    gram1data = utility.readjsondatafromfile(GRAM1FILE_COUNT)
     for line in t2file:
         pbar.update(len(line))
         _, count = line.strip().split('\t')
@@ -101,15 +106,20 @@ def smooth2gram():
         try: f, t = k.split('_')
         except: continue
         if len(f) == 0 or len(t) == 0: continue
+        if f not in gram1data:continue
         data.setdefault(t, {})
-        data[t][f] = count / max_count#gram1data[f]
+        data[t][f] = count / gram1data[f]
+        count_data.setdefault(t, {})
+        count_data[t][f] = count
         total_count += 1
     data['_'] = {}
     data['_']['_'] = 1 / max_count
     utility.writejson2file(data, GRAM2FILE)
+    utility.writejson2file(count_data, GRAM2FILE_COUNT)
     pbar.close()
     t2file.close()
     data.clear()
+    count_data.clear()
     gc.collect()
     print('bi-gram data count:', all, ' → ', total_count)
 
@@ -179,21 +189,13 @@ def process():
     gen_words2delete()
     print('Loading...2/2')
     print('Slim and smooth uni-gram data')
-    p1 = multiprocessing.Process(target=smooth1gram, args=(gram1data, words_to_delete))
+    smooth1gram(gram1data, words_to_delete)
     print('Slim and smooth bi-gram data')
-    p2 = multiprocessing.Process(target=smooth2gram)
+    smooth2gram()
     print('Slim and smooth tri-gram data')
-    p3 = multiprocessing.Process(target=smooth3gram)
-
-    p1.start()
-    p2.start()
-    p3.start()
-    p1.join()
-    p2.join()
-    p3.join()
+    smooth3gram()
 
     print('😃 Done!')
-
 
 if __name__ == '__main__':
     process()

@@ -2,3 +2,7 @@ lmdb
 tqdm
 psutil
 pypinyin
+opencc
+zhon
+jieba
+jieba_fast
