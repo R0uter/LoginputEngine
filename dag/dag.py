@@ -160,7 +160,6 @@ def get_candidates_from(py: str,
     # 第二个字词的处理
     if pinyin_num >= 2:
         for last_index, prev_paths in enumerate(Graph):
-            if last_index < 1: continue
             from_index = last_index + 1
             for to_idx in range(from_index, pinyin_num):
                 key = from_index*100+to_idx
@@ -188,7 +187,6 @@ def get_candidates_from(py: str,
     # 第三个字词往后处理 gram3
     if pinyin_num >= 3:
         for last_index, prev_paths in enumerate(Graph):
-            if last_index < 2: continue
             from_index = last_index + 1
             for to_idx in range(from_index, pinyin_num):
                 key = from_index*100+to_idx
