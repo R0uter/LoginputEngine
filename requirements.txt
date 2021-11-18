@@ -2,7 +2,7 @@ lmdb
 tqdm
 psutil
 pypinyin
-opencc
+opencc-python-reimplemented
 zhon
 jieba
 jieba_fast
