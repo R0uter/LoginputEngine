@@ -18,10 +18,10 @@
 
 ## 算法模型
 
-该引擎使用隐马尔科夫模型和统计语言模型混搭概念实现，3-Gram（Tri-Gram）转移矩阵，使用 DAG（动态规划）进行求解。
-Gram 单位为"词汇"，这样大大降低了算法遍历次数（相对于以字为单位来说），平滑使用简单的最大似然法处理，转移不存在则退回低阶，都不存在则使用一阶最小值。
+该引擎使用 KenLM 生成 ARPA 模型，3-Gram（Tri-Gram）转移矩阵，使用 DAG（动态规划）进行求解。
+Gram 单位为"词汇"，这样大大降低了算法遍历次数（相对于以字为单位来说），转移不存在则以 BackOff 退回低阶，都不存在则使用一阶 `<unk>` 最小值。
 训练时使用 `fast jieba` 进行分词，并用 `OpenCC` 统一转换为简体字处理。
-考虑到中文输入时大多数情况下并不是从一句话开头进行打字，训练时不对语句进行起止标记。
+考虑到中文输入时大多数情况下并不是从一句话开头进行打字，实际处理时会直接过滤包含起止标记的转移 `<s>` `</s>`。
 
 ## 数据结构
 
@@ -56,7 +56,9 @@ _排序是为了方便单独查询，其实不排也就那样……_
 ### 转移数据库
 
 转移数据库使用 LMDB，写入速度一般，但读取的速度是极快的，将词汇转移以 `你好_我是_落格输入法` 这样的格式平铺存储，
-由于 LMDB 要求存入二进制数据，所以 Key 同样使用 `GB18030` 编码处理，大大缩小了中文的存储体积， Value 则是 `Double` 类型的二进制文件。
+由于 LMDB 要求存入二进制数据，所以 Key 同样使用 `GB18030` 编码处理，大大缩小了中文的存储体积， Value 则是两个 `Double` 类型的组合二进制文件。
+
+读取时， Value 是 128 位 即 16字节 长度，是两个 `Double` 这样前 8 字节为普通转移权重，后 8 字节 则是 Back-Off 回退权重，回退权重有可能是0，对于最高阶，即 3 Gram 来说，不存在回退权重，则 Value 只有 8 字节。
 
 ## 模型训练
 
@@ -87,36 +89,36 @@ _排序是为了方便单独查询，其实不排也就那样……_
 去掉所有英文和数字以及标点符号，并每一句拆分成一行进行存储，最终生成的`data.txt`将被放入`result_files`目录中。
 
 
-2 从生成的 data.txt 文件统计转移
+2 为生成的 `data.txt` 文件进行分词
 
-`get_transition_from_data.process()` 会逐行读入`data.txt`文件并对其使用 jieba 进行分词，
-然后分别统计 1、2、3 Gram 词汇转移数量，最终会在`result_files/temp`目录中生成未合并的临时文件。
-然后再由主线程统一读取合并写入到磁盘。
-
-
-3 对统计得出的转移词频进行修剪以缩小体积并用最大似然法平滑
-
-`get_smooth_transition.process()` 会读取统计结果并对其进行修剪，你需要根据自己的实际情况进行调参，
-基本概念就是去掉对应 Gram 下所有总统计数量的平均数的倍数以下的条目。
-
-	比如 1 Gram 总共有 `100` 条，其中所有条目出现次数总和为 `10000` 次，那么平均数就是 `10000/100= 100`，
-	如果我们比例设置为 0.5，那么就去掉所有统计数量低于`100*0.5=50`的条目。
-	
-最终，写出三个转移矩阵 json 文件以供使用和查看（因为修剪后体积足够小，就写成 json 方便 debug）
-以及一个同样修剪过的拼音与对应中文词汇的发射矩阵。
+`cut_data()` 会逐行读入`data.txt`文件并对其使用 jieba 进行分词，最终会在`result_files`目录中生成切分好的 `data_cuted.txt`，这个过程同时也会去掉语料中的各种标点符号。
+> 注意这个操作主要在内存中，对内存压力很大，10G gb18030 编码文件全程占用内存 30G。 
 
 
-4 用平滑后的结果生成用于计算的二进制数据库，一个 SQLite 用来查拼音到词汇，一个 LMDB 用来查词汇转移概率
-（以 10 为底的对数）
+3 使用处理好的语料训练模型
 
-`database_generator.writeLMDB()`
+编译 KenLM 库:
+`brew install cmake boost eigen`
+```bash
+wget -O - https://kheafield.com/code/kenlm.tar.gz |tar xz
+mkdir kenlm/build
+cd kenlm/build
+cmake ..
+make -j2
+```
+详见：[KenLM Language Model Toolkit](https://kheafield.com/code/kenlm/) 以及 [kpu/kenlm](https://github.com/kpu/kenlm)
+
+然后使用命令： `cd result_files && ../train_kenlm/kenlm/build/bin/lmplz -o 3 --verbose_header --text data_cuted.txt --arpa log.arpa` 生成 `log.arpa` 模型
+
+4 将模型转换为落格输入法可读的二进制格式
+`arpa_to_lmdb.gen_emission_and_database()`
 
 ## 拼音编码
 
 我对拼音进行了特殊编码，以便于把拼音转换成整数进行表达，这样每个拼音占用 16 位。声母占用高 8 位，韵母（严格来讲是所有非声母部分组合）占用低 8 位，
 这样一个拼音就占用 16 位，且可以方便地进行拆分组合，模糊查询。（具体见 `./res/pinyin_data.py`）
 
-	比如要查询 zh 的简拼，那么只需要在 SQLite 中查询所有大于 zh的低8位 0 mask 且 小于 zh的低8位 1 mask 即可。
+	比如要查询 zh 的简拼，那么只需要在 SQLite 中查询所有大于 zh 的低8位 0 mask 且 小于 zh 的低 8 位 1 mask 即可。
 	
 
 

@@ -2,3 +2,6 @@ articles
 result_files
 tmp
 .vscode/settings.json
+res/word.txt
+train_kenlm/kenlm/dist
+res/new_words.txt
