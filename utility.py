@@ -1,7 +1,7 @@
 import gc
 import os
 import psutil
-from pypinyin import Style, pinyin, load_phrases_dict
+from pypinyin import Style, pinyin, load_phrases_dict, load_single_dict
 import json
 import plistlib
 import jieba_fast as jieba
@@ -13,9 +13,10 @@ from zhon import hanzi
 cc = OpenCC('t2s')
 
 
-def load_user_data_pypinyin(): 
+def load_user_data_pypinyin():
     from res import pypinyinDict
     load_phrases_dict(pypinyinDict.datas)
+    load_single_dict({ord('豉'): 'chǐ,shì'})
 
 
 def load_user_data_jieba():

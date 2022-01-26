@@ -57,7 +57,7 @@ def _get_data_ready():
                 if 's>' in line:  # 带有 s> 的是开头或者结尾，我们不需要
                     continue
                 weight, words, bow = line.strip().split('\t')
-                if float(weight) < -1: continue
+                if float(weight) < -1.5: continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), float(bow))
 
@@ -66,7 +66,7 @@ def _get_data_ready():
                     continue
                 try:
                     weight, words = line.strip().split('\t')
-                    if float(weight) < -1.5: continue
+                    if float(weight) < -1: continue
                 except:
                     print(line)
                     continue

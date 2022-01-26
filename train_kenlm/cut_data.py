@@ -9,6 +9,7 @@ kGB18030 = 'gb18030'
 
 
 def cut_data():
+    utility.load_user_data_jieba()
     print('💭开始统计资料总条目数...')
     total_counts = utility.read_lines_from(DATA_PATH)
 
