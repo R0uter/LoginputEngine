@@ -5,10 +5,8 @@ import lmdb
 import utility
 import tqdm
 import struct
-import math
 import sqlite3
 import res.pinyin_data
-import re
 import multiprocessing
 
 ARPA_PATH = './result_files/log.arpa'
@@ -77,6 +75,7 @@ def _get_data_ready():
 
 
 def _write_py_database():
+    utility.load_user_data_pypinyin()
     gram1_raw_data = {}
     print('Start loading 1gram for py data')
     with open(ARPA_PATH, 'r') as f:
