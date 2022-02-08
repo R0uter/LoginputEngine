@@ -1,4 +1,3 @@
-
 kShengMuOffset = 8
 kYunMuMask = 0b111111
 
@@ -27,7 +26,6 @@ sh = (17 << kShengMuOffset) | 0b10000000
 r = 18 << kShengMuOffset
 w = 22 << kShengMuOffset
 y = 23 << kShengMuOffset
-
 
 ai = 1
 ei = 2
@@ -64,7 +62,7 @@ i = 31
 u = 32
 v = 33
 
-kei =  k | ei
+kei = k | ei
 zhang = zh | ang
 guan = g | uan
 guo = g | uo
@@ -77,7 +75,7 @@ pao = p | ao
 geng = g | eng
 xin = x | in_
 nang = n | ang
-fang =  f | ang
+fang = f | ang
 yao = y | ao
 ran = r | an
 tong = t | ong
@@ -95,7 +93,7 @@ pu = p | u
 bai = b | ai
 pen = p | en
 qu = q | u
-cun =  c | un
+cun = c | un
 shen = sh | en
 tie = t | ie
 bo = b | o
@@ -111,7 +109,7 @@ cang = c | ang
 shan = sh | an
 kun = k | un
 bing = b | ing
-lian =  l | ian
+lian = l | ian
 bin = b | in_
 sou = s | ou
 tei = t | ei
@@ -127,7 +125,7 @@ duan = d | uan
 dai = d | ai
 gen = g | en
 suo = s | uo
-mei =  m | ei
+mei = m | ei
 san = s | an
 su = s | u
 pin = p | in_
@@ -144,7 +142,7 @@ ka = k | a
 qie = q | ie
 yo = y | o
 zheng = zh | eng
-kong =  k | ong
+kong = k | ong
 che = ch | e
 gang = g | ang
 yin = y | in_
@@ -162,7 +160,7 @@ ying = y | ing
 fei = f | ei
 mo = m | o
 wan = w | an
-na =  n | a
+na = n | a
 nuan = n | uan
 chai = ch | ai
 la = l | a
@@ -179,7 +177,7 @@ gou = g | ou
 beng = b | eng
 zhai = zh | ai
 me = m | e
-xu =  x | u
+xu = x | u
 pa = p | a
 sun = s | un
 zhu = zh | u
@@ -196,7 +194,7 @@ ti = t | i
 yong = y | ong
 zhuan = zh | uan
 piao = p | iao
-cou =  c | ou
+cou = c | ou
 xia = x | ia
 nun = n | un
 ke = k | e
@@ -212,7 +210,7 @@ shou = sh | ou
 shei = sh | ei
 bu = b | u
 leng = l | eng
-gun =  g | un
+gun = g | un
 po = p | o
 lue = l | ue
 yan = y | an
@@ -229,7 +227,7 @@ qin = q | in_
 tou = t | ou
 dong = d | ong
 lai = l | ai
-liang =  l | iang
+liang = l | iang
 ri = r | i
 guai = g | uai
 nv = n | v
@@ -246,7 +244,7 @@ zuan = z | uan
 chuan = ch | uan
 le = l | e
 nue = n | ue
-hu =  h | u
+hu = h | u
 nong = n | ong
 sang = s | ang
 cuo = c | uo
@@ -264,7 +262,7 @@ yi = y | i
 zao = z | ao
 dan = d | an
 quan = q | uan
-rou =  r | ou
+rou = r | ou
 yu = y | u
 chui = ch | ui
 meng = m | eng
@@ -279,7 +277,7 @@ chang = ch | ang
 fong = f | ong
 bang = b | ang
 hong = h | ong
-chuo =  ch | uo
+chuo = ch | uo
 fou = f | ou
 zeng = z | eng
 rui = r | ui
@@ -294,7 +292,7 @@ peng = p | eng
 jia = j | ia
 zun = z | un
 bian = b | ian
-miu =  m | iu
+miu = m | iu
 sei = s | ei
 jiao = j | iao
 chan = ch | an
@@ -309,7 +307,7 @@ ning = n | ing
 diao = d | iao
 fu = f | u
 chou = ch | ou
-qian =  q | ian
+qian = q | ian
 ma = m | a
 de = d | e
 zhou = zh | ou
@@ -326,7 +324,7 @@ zhao = zh | ao
 zhi = zh | i
 lu = l | u
 yue = y | ue
-qun =  q | un
+qun = q | un
 jiu = j | iu
 weng = w | eng
 xiong = x | iong
@@ -342,7 +340,7 @@ suan = s | uan
 pang = p | ang
 jian = j | ian
 zhe = zh | e
-zhong =  zh | ong
+zhong = zh | ong
 ding = d | ing
 kai = k | ai
 zhua = zh | ua
@@ -357,7 +355,7 @@ wai = w | ai
 ming = m | ing
 bie = b | ie
 xue = x | ue
-hua =  h | ua
+hua = h | ua
 tiao = t | iao
 qi = q | i
 ba = b | a
@@ -374,7 +372,7 @@ ruo = r | uo
 zan = z | an
 xun = x | un
 dei = d | ei
-rong =  r | ong
+rong = r | ong
 shun = sh | un
 da = d | a
 luo = l | uo
@@ -390,7 +388,7 @@ nai = n | ai
 zou = z | ou
 you = y | ou
 gai = g | ai
-lang =  l | ang
+lang = l | ang
 ha = h | a
 ren = r | en
 mao = m | ao
@@ -408,7 +406,7 @@ sa = s | a
 cao = c | ao
 cha = ch | a
 dao = d | ao
-man =  m | an
+man = m | an
 kuan = k | uan
 shi = sh | i
 chu = ch | u
@@ -425,7 +423,7 @@ ju = j | u
 nen = n | en
 hui = h | ui
 gua = g | ua
-ta =  t | a
+ta = t | a
 miao = m | iao
 gao = g | ao
 qiang = q | iang
@@ -442,7 +440,7 @@ ge = g | e
 wen = w | en
 nu = n | u
 pai = p | ai
-zi =  z | i
+zi = z | i
 nin = n | in_
 ben = b | en
 song = s | ong
@@ -458,7 +456,7 @@ jing = j | ing
 xi = x | i
 ceng = c | eng
 rang = r | ang
-niang =  n | iang
+niang = n | iang
 shao = sh | ao
 wo = w | o
 xie = x | ie
@@ -466,455 +464,455 @@ qiong = q | iong
 heng = h | eng
 dang = d | ang
 lo = l | o
-
+zhei = zh | ei
 
 s2i_dict = {
-        "kei": kei,
-        "zhang": zhang,
-        "guan": guan,
-        "ei": ei,
-        "guo": guo,
-        "nei": nei,
-        "zha": zha,
-        "hen": hen,
-        "chuang": chuang,
-        "fen": fen,
-        "pao": pao,
-        "geng": geng,
-        "xin": xin,
-        "nang": nang,
-        "fang": fang,
-        "yao": yao,
-        "ran": ran,
-        "tong": tong,
-        "seng": seng,
-        "nao": nao,
-        "teng": teng,
-        "nie": nie,
-        "te": te,
-        "nou": nou,
-        "run": run,
-        "dui": dui,
-        "die": die,
-        "ne": ne,
-        "pu": pu,
-        "bai": bai,
-        "pen": pen,
-        "qu": qu,
-        "cun": cun,
-        "shen": shen,
-        "tie": tie,
-        "bo": bo,
-        "liao": liao,
-        "tun": tun,
-        "zhan": zhan,
-        "cui": cui,
-        "zhun": zhun,
-        "en": en,
-        "mie": mie,
-        "zai": zai,
-        "rua": rua,
-        "cang": cang,
-        "shan": shan,
-        "kun": kun,
-        "bing": bing,
-        "lian": lian,
-        "bin": bin,
-        "sou": sou,
-        "tei": tei,
-        "di": di,
-        "shai": shai,
-        "deng": deng,
-        "eng": eng,
-        "shuai": shuai,
-        "pei": pei,
-        "wa": wa,
-        "shui": shui,
-        "li": li,
-        "duan": duan,
-        "dai": dai,
-        "gen": gen,
-        "suo": suo,
-        "mei": mei,
-        "san": san,
-        "su": su,
-        "pin": pin,
-        "zhuang": zhuang,
-        "fan": fan,
-        "cong": cong,
-        "huo": huo,
-        "ru": ru,
-        "hou": hou,
-        "ku": ku,
-        "men": men,
-        "lei": lei,
-        "ka": ka,
-        "qie": qie,
-        "yo": yo,
-        "zheng": zheng,
-        "kong": kong,
-        "che": che,
-        "gang": gang,
-        "yin": yin,
-        "zhui": zhui,
-        "chun": chun,
-        "kui": kui,
-        "lia": lia,
-        "se": se,
-        "yuan": yuan,
-        "ting": ting,
-        "fo": fo,
-        "he": he,
-        "jin": jin,
-        "ying": ying,
-        "fei": fei,
-        "mo": mo,
-        "wan": wan,
-        "na": na,
-        "nuan": nuan,
-        "chai": chai,
-        "la": la,
-        "sheng": sheng,
-        "cu": cu,
-        "hang": hang,
-        "shuo": shuo,
-        "niao": niao,
-        "qiao": qiao,
-        "jue": jue,
-        "shu": shu,
-        "si": si,
-        "gou": gou,
-        "beng": beng,
-        "zhai": zhai,
-        "me": me,
-        "xu": xu,
-        "pa": pa,
-        "sun": sun,
-        "zhu": zhu,
-        "lun": lun,
-        "gei": gei,
-        "xian": xian,
-        "xiu": xiu,
-        "que": que,
-        "niu": niu,
-        "kua": kua,
-        "can": can,
-        "chong": chong,
-        "ti": ti,
-        "yong": yong,
-        "zhuan": zhuan,
-        "piao": piao,
-        "cou": cou,
-        "xia": xia,
-        "nun": nun,
-        "ke": ke,
-        "ping": ping,
-        "kang": kang,
-        "bi": bi,
-        "tuan": tuan,
-        "chua": chua,
-        "wei": wei,
-        "xiang": xiang,
-        "nuo": nuo,
-        "shou": shou,
-        "shei": shei,
-        "bu": bu,
-        "ou": ou,
-        "leng": leng,
-        "gun": gun,
-        "po": po,
-        "lue": lue,
-        "yan": yan,
-        "duo": duo,
-        "yun": yun,
-        "mou": mou,
-        "xing": xing,
-        "xiao": xiao,
-        "han": han,
-        "lou": lou,
-        "cai": cai,
-        "nian": nian,
-        "qin": qin,
-        "tou": tou,
-        "dong": dong,
-        "lai": lai,
-        "liang": liang,
-        "ri": ri,
-        "guai": guai,
-        "nv": nv,
-        "dia": dia,
-        "lv": lv,
-        "tu": tu,
-        "tian": tian,
-        "qing": qing,
-        "rao": rao,
-        "pian": pian,
-        "shuan": shuan,
-        "ca": ca,
-        "zuan": zuan,
-        "chuan": chuan,
-        "le": le,
-        "nue": nue,
-        "hu": hu,
-        "nong": nong,
-        "sang": sang,
-        "cuo": cuo,
-        "ya": ya,
-        "wu": wu,
-        "ga": ga,
-        "zei": zei,
-        "shang": shang,
-        "ye": ye,
-        "zong": zong,
-        "jie": jie,
-        "dou": dou,
-        "ni": ni,
-        "yi": yi,
-        "zao": zao,
-        "dan": dan,
-        "quan": quan,
-        "rou": rou,
-        "yu": yu,
-        "chui": chui,
-        "er": er,
-        "meng": meng,
-        "den": den,
-        "diu": diu,
-        "lao": lao,
-        "qiu": qiu,
-        "biao": biao,
-        "tao": tao,
-        "ao": ao,
-        "za": za,
-        "chang": chang,
-        "fong": fong,
-        "bang": bang,
-        "hong": hong,
-        "chuo": chuo,
-        "fou": fou,
-        "zeng": zeng,
-        "rui": rui,
-        "mang": mang,
-        "hei": hei,
-        "an": an,
-        "gui": gui,
-        "hao": hao,
-        "lie": lie,
-        "neng": neng,
-        "liu": liu,
-        "peng": peng,
-        "jia": jia,
-        "zun": zun,
-        "bian": bian,
-        "miu": miu,
-        "sei": sei,
-        "jiao": jiao,
-        "chan": chan,
-        "ang": ang,
-        "cen": cen,
-        "kan": kan,
-        "mi": mi,
-        "kou": kou,
-        "ai": ai,
-        "ling": ling,
-        "zhen": zhen,
-        "sai": sai,
-        "ning": ning,
-        "diao": diao,
-        "fu": fu,
-        "chou": chou,
-        "qian": qian,
-        "ma": ma,
-        "de": de,
-        "zhou": zhou,
-        "tuo": tuo,
-        "kuo": kuo,
-        "min": min,
-        "tai": tai,
-        "feng": feng,
-        "ze": ze,
-        "zhuo": zhuo,
-        "dun": dun,
-        "jiang": jiang,
-        "zhao": zhao,
-        "zhi": zhi,
-        "lu": lu,
-        "yue": yue,
-        "qun": qun,
-        "jiu": jiu,
-        "weng": weng,
-        "xiong": xiong,
-        "kao": kao,
-        "luan": luan,
-        "huan": huan,
-        "zang": zang,
-        "long": long,
-        "tui": tui,
-        "lan": lan,
-        "sen": sen,
-        "suan": suan,
-        "pang": pang,
-        "jian": jian,
-        "zhe": zhe,
-        "zhong": zhong,
-        "ding": ding,
-        "kai": kai,
-        "zhua": zhua,
-        "nan": nan,
-        "lin": lin,
-        "keng": keng,
-        "sui": sui,
-        "zhuai": zhuai,
-        "hun": hun,
-        "dian": dian,
-        "wai": wai,
-        "ming": ming,
-        "bie": bie,
-        "xue": xue,
-        "hua": hua,
-        "tiao": tiao,
-        "qi": qi,
-        "ba": ba,
-        "chi": chi,
-        "huang": huang,
-        "cuan": cuan,
-        "a": a,
-        "zen": zen,
-        "fa": fa,
-        "ce": ce,
-        "sha": sha,
-        "cheng": cheng,
-        "jun": jun,
-        "ruo": ruo,
-        "zan": zan,
-        "xun": xun,
-        "dei": dei,
-        "rong": rong,
-        "shun": shun,
-        "da": da,
-        "luo": luo,
-        "shua": shua,
-        "pou": pou,
-        "pie": pie,
-        "gong": gong,
-        "juan": juan,
-        "yang": yang,
-        "kuang": kuang,
-        "ruan": ruan,
-        "nai": nai,
-        "zou": zou,
-        "you": you,
-        "gai": gai,
-        "lang": lang,
-        "ha": ha,
-        "ren": ren,
-        "mao": mao,
-        "hai": hai,
-        "mu": mu,
-        "wang": wang,
-        "re": re,
-        "she": she,
-        "zuo": zuo,
-        "ken": ken,
-        "chao": chao,
-        "zui": zui,
-        "chuai": chuai,
-        "sa": sa,
-        "cao": cao,
-        "cha": cha,
-        "dao": dao,
-        "man": man,
-        "kuan": kuan,
-        "shi": shi,
-        "chu": chu,
-        "e": e,
-        "ban": ban,
-        "ci": ci,
-        "qia": qia,
-        "sao": sao,
-        "kuai": kuai,
-        "mai": mai,
-        "tan": tan,
-        "shuang": shuang,
-        "pi": pi,
-        "ju": ju,
-        "nen": nen,
-        "hui": hui,
-        "gua": gua,
-        "ta": ta,
-        "miao": miao,
-        "gao": gao,
-        "qiang": qiang,
-        "gu": gu,
-        "ji": ji,
-        "du": du,
-        "guang": guang,
-        "pan": pan,
-        "fiao": fiao,
-        "mian": mian,
-        "reng": reng,
-        "huai": huai,
-        "ge": ge,
-        "wen": wen,
-        "nu": nu,
-        "pai": pai,
-        "zi": zi,
-        "nin": nin,
-        "ben": ben,
-        "song": song,
-        "gan": gan,
-        "bao": bao,
-        "xuan": xuan,
-        "chen": chen,
-        "jiong": jiong,
-        "zu": zu,
-        "tang": tang,
-        "bei": bei,
-        "jing": jing,
-        "xi": xi,
-        "ceng": ceng,
-        "rang": rang,
-        "niang": niang,
-        "shao": shao,
-        "wo": wo,
-        "xie": xie,
-        "qiong": qiong,
-        "heng": heng,
-        "dang": dang,
-        "lo": lo,
-        "o": o,
-        "b": b,
-        "p": p,
-        "m": m,
-        "f": f,
-        "d": d,
-        "t": t,
-        "n": n,
-        "l": l,
-        "g": g,
-        "k": k,
-        "h": h,
-        "j": j,
-        "q": q,
-        "x": x,
-        "zh": zh,
-        "ch": ch,
-        "sh": sh,
-        "r": r,
-        "w": w,
-        "y": y,
-        "z": z,
-        "c": c,
-        "s": s,
+    "kei": kei,
+    "zhang": zhang,
+    "guan": guan,
+    "ei": ei,
+    "guo": guo,
+    "nei": nei,
+    "zha": zha,
+    "hen": hen,
+    "chuang": chuang,
+    "fen": fen,
+    "pao": pao,
+    "geng": geng,
+    "xin": xin,
+    "nang": nang,
+    "fang": fang,
+    "yao": yao,
+    "ran": ran,
+    "tong": tong,
+    "seng": seng,
+    "nao": nao,
+    "teng": teng,
+    "nie": nie,
+    "te": te,
+    "nou": nou,
+    "run": run,
+    "dui": dui,
+    "die": die,
+    "ne": ne,
+    "pu": pu,
+    "bai": bai,
+    "pen": pen,
+    "qu": qu,
+    "cun": cun,
+    "shen": shen,
+    "tie": tie,
+    "bo": bo,
+    "liao": liao,
+    "tun": tun,
+    "zhan": zhan,
+    "cui": cui,
+    "zhun": zhun,
+    "en": en,
+    "mie": mie,
+    "zai": zai,
+    "rua": rua,
+    "cang": cang,
+    "shan": shan,
+    "kun": kun,
+    "bing": bing,
+    "lian": lian,
+    "bin": bin,
+    "sou": sou,
+    "tei": tei,
+    "di": di,
+    "shai": shai,
+    "deng": deng,
+    "eng": eng,
+    "shuai": shuai,
+    "pei": pei,
+    "wa": wa,
+    "shui": shui,
+    "li": li,
+    "duan": duan,
+    "dai": dai,
+    "gen": gen,
+    "suo": suo,
+    "mei": mei,
+    "san": san,
+    "su": su,
+    "pin": pin,
+    "zhuang": zhuang,
+    "fan": fan,
+    "cong": cong,
+    "huo": huo,
+    "ru": ru,
+    "hou": hou,
+    "ku": ku,
+    "men": men,
+    "lei": lei,
+    "ka": ka,
+    "qie": qie,
+    "yo": yo,
+    "zheng": zheng,
+    "kong": kong,
+    "che": che,
+    "gang": gang,
+    "yin": yin,
+    "zhui": zhui,
+    "chun": chun,
+    "kui": kui,
+    "lia": lia,
+    "se": se,
+    "yuan": yuan,
+    "ting": ting,
+    "fo": fo,
+    "he": he,
+    "jin": jin,
+    "ying": ying,
+    "fei": fei,
+    "mo": mo,
+    "wan": wan,
+    "na": na,
+    "nuan": nuan,
+    "chai": chai,
+    "la": la,
+    "sheng": sheng,
+    "cu": cu,
+    "hang": hang,
+    "shuo": shuo,
+    "niao": niao,
+    "qiao": qiao,
+    "jue": jue,
+    "shu": shu,
+    "si": si,
+    "gou": gou,
+    "beng": beng,
+    "zhai": zhai,
+    "me": me,
+    "xu": xu,
+    "pa": pa,
+    "sun": sun,
+    "zhu": zhu,
+    "lun": lun,
+    "gei": gei,
+    "xian": xian,
+    "xiu": xiu,
+    "que": que,
+    "niu": niu,
+    "kua": kua,
+    "can": can,
+    "chong": chong,
+    "ti": ti,
+    "yong": yong,
+    "zhuan": zhuan,
+    "piao": piao,
+    "cou": cou,
+    "xia": xia,
+    "nun": nun,
+    "ke": ke,
+    "ping": ping,
+    "kang": kang,
+    "bi": bi,
+    "tuan": tuan,
+    "chua": chua,
+    "wei": wei,
+    "xiang": xiang,
+    "nuo": nuo,
+    "shou": shou,
+    "shei": shei,
+    "bu": bu,
+    "ou": ou,
+    "leng": leng,
+    "gun": gun,
+    "po": po,
+    "lue": lue,
+    "yan": yan,
+    "duo": duo,
+    "yun": yun,
+    "mou": mou,
+    "xing": xing,
+    "xiao": xiao,
+    "han": han,
+    "lou": lou,
+    "cai": cai,
+    "nian": nian,
+    "qin": qin,
+    "tou": tou,
+    "dong": dong,
+    "lai": lai,
+    "liang": liang,
+    "ri": ri,
+    "guai": guai,
+    "nv": nv,
+    "dia": dia,
+    "lv": lv,
+    "tu": tu,
+    "tian": tian,
+    "qing": qing,
+    "rao": rao,
+    "pian": pian,
+    "shuan": shuan,
+    "ca": ca,
+    "zuan": zuan,
+    "chuan": chuan,
+    "le": le,
+    "nue": nue,
+    "hu": hu,
+    "nong": nong,
+    "sang": sang,
+    "cuo": cuo,
+    "ya": ya,
+    "wu": wu,
+    "ga": ga,
+    "zei": zei,
+    "shang": shang,
+    "ye": ye,
+    "zong": zong,
+    "jie": jie,
+    "dou": dou,
+    "ni": ni,
+    "yi": yi,
+    "zao": zao,
+    "dan": dan,
+    "quan": quan,
+    "rou": rou,
+    "yu": yu,
+    "chui": chui,
+    "er": er,
+    "meng": meng,
+    "den": den,
+    "diu": diu,
+    "lao": lao,
+    "qiu": qiu,
+    "biao": biao,
+    "tao": tao,
+    "ao": ao,
+    "za": za,
+    "chang": chang,
+    "fong": fong,
+    "bang": bang,
+    "hong": hong,
+    "chuo": chuo,
+    "fou": fou,
+    "zeng": zeng,
+    "rui": rui,
+    "mang": mang,
+    "hei": hei,
+    "an": an,
+    "gui": gui,
+    "hao": hao,
+    "lie": lie,
+    "neng": neng,
+    "liu": liu,
+    "peng": peng,
+    "jia": jia,
+    "zun": zun,
+    "bian": bian,
+    "miu": miu,
+    "sei": sei,
+    "jiao": jiao,
+    "chan": chan,
+    "ang": ang,
+    "cen": cen,
+    "kan": kan,
+    "mi": mi,
+    "kou": kou,
+    "ai": ai,
+    "ling": ling,
+    "zhen": zhen,
+    "sai": sai,
+    "ning": ning,
+    "diao": diao,
+    "fu": fu,
+    "chou": chou,
+    "qian": qian,
+    "ma": ma,
+    "de": de,
+    "zhou": zhou,
+    "tuo": tuo,
+    "kuo": kuo,
+    "min": min,
+    "tai": tai,
+    "feng": feng,
+    "ze": ze,
+    "zhuo": zhuo,
+    "dun": dun,
+    "jiang": jiang,
+    "zhao": zhao,
+    "zhi": zhi,
+    "lu": lu,
+    "yue": yue,
+    "qun": qun,
+    "jiu": jiu,
+    "weng": weng,
+    "xiong": xiong,
+    "kao": kao,
+    "luan": luan,
+    "huan": huan,
+    "zang": zang,
+    "long": long,
+    "tui": tui,
+    "lan": lan,
+    "sen": sen,
+    "suan": suan,
+    "pang": pang,
+    "jian": jian,
+    "zhe": zhe,
+    "zhong": zhong,
+    "ding": ding,
+    "kai": kai,
+    "zhua": zhua,
+    "nan": nan,
+    "lin": lin,
+    "keng": keng,
+    "sui": sui,
+    "zhuai": zhuai,
+    "hun": hun,
+    "dian": dian,
+    "wai": wai,
+    "ming": ming,
+    "bie": bie,
+    "xue": xue,
+    "hua": hua,
+    "tiao": tiao,
+    "qi": qi,
+    "ba": ba,
+    "chi": chi,
+    "huang": huang,
+    "cuan": cuan,
+    "a": a,
+    "zen": zen,
+    "fa": fa,
+    "ce": ce,
+    "sha": sha,
+    "cheng": cheng,
+    "jun": jun,
+    "ruo": ruo,
+    "zan": zan,
+    "xun": xun,
+    "dei": dei,
+    "rong": rong,
+    "shun": shun,
+    "da": da,
+    "luo": luo,
+    "shua": shua,
+    "pou": pou,
+    "pie": pie,
+    "gong": gong,
+    "juan": juan,
+    "yang": yang,
+    "kuang": kuang,
+    "ruan": ruan,
+    "nai": nai,
+    "zou": zou,
+    "you": you,
+    "gai": gai,
+    "lang": lang,
+    "ha": ha,
+    "ren": ren,
+    "mao": mao,
+    "hai": hai,
+    "mu": mu,
+    "wang": wang,
+    "re": re,
+    "she": she,
+    "zuo": zuo,
+    "ken": ken,
+    "chao": chao,
+    "zui": zui,
+    "chuai": chuai,
+    "sa": sa,
+    "cao": cao,
+    "cha": cha,
+    "dao": dao,
+    "man": man,
+    "kuan": kuan,
+    "shi": shi,
+    "chu": chu,
+    "e": e,
+    "ban": ban,
+    "ci": ci,
+    "qia": qia,
+    "sao": sao,
+    "kuai": kuai,
+    "mai": mai,
+    "tan": tan,
+    "shuang": shuang,
+    "pi": pi,
+    "ju": ju,
+    "nen": nen,
+    "hui": hui,
+    "gua": gua,
+    "ta": ta,
+    "miao": miao,
+    "gao": gao,
+    "qiang": qiang,
+    "gu": gu,
+    "ji": ji,
+    "du": du,
+    "guang": guang,
+    "pan": pan,
+    "fiao": fiao,
+    "mian": mian,
+    "reng": reng,
+    "huai": huai,
+    "ge": ge,
+    "wen": wen,
+    "nu": nu,
+    "pai": pai,
+    "zi": zi,
+    "nin": nin,
+    "ben": ben,
+    "song": song,
+    "gan": gan,
+    "bao": bao,
+    "xuan": xuan,
+    "chen": chen,
+    "jiong": jiong,
+    "zu": zu,
+    "tang": tang,
+    "bei": bei,
+    "jing": jing,
+    "xi": xi,
+    "ceng": ceng,
+    "rang": rang,
+    "niang": niang,
+    "shao": shao,
+    "wo": wo,
+    "xie": xie,
+    "qiong": qiong,
+    "heng": heng,
+    "dang": dang,
+    "lo": lo,
+    "zhei": zhei,
+    "o": o,
+    "b": b,
+    "p": p,
+    "m": m,
+    "f": f,
+    "d": d,
+    "t": t,
+    "n": n,
+    "l": l,
+    "g": g,
+    "k": k,
+    "h": h,
+    "j": j,
+    "q": q,
+    "x": x,
+    "zh": zh,
+    "ch": ch,
+    "sh": sh,
+    "r": r,
+    "w": w,
+    "y": y,
+    "z": z,
+    "c": c,
+    "s": s,
 
-        "jv": ju,
-        "qv": qu,
-        "xv": xu,
-        "jve": jue,
-        "qve": que,
-        "lve": lue,
-        "nve": nue,
-        "yve": yue,
-        "xve": xue,
+    "jv": ju,
+    "qv": qu,
+    "xv": xu,
+    "jve": jue,
+    "qve": que,
+    "lve": lue,
+    "nve": nue,
+    "yve": yue,
+    "xve": xue,
 }
-
