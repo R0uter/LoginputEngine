@@ -14,7 +14,7 @@ def main():
     # 2 为 data.txt 文件分词处理
     # cut_data.cut_data()
     # 3 使用命令行调用 kenlm 训练 arpa 模型
-    # os.system('{} -o 3 --verbose_header --text {}  --arpa {} --prune 0 60 100'.format(lmplz, data, arpa))
+    # os.system('{} -o 3 --verbose_header --text {}  --arpa {} --prune 0 30 50'.format(lmplz, data, arpa))
     # 4 生成最终可用模型，
     #   一个 LMDB 用来查词汇转移概率（以 10 为底的对数）
     arpa_to_lmdb.gen_emission_and_database()

@@ -28,7 +28,7 @@ def _get_data_ready():
 
             if reading_gram == 0 and line.startswith('\\1-grams:'):
                 reading_gram = 1
-                data_to_write['<unk>'] = [-8.189994, 0.0]
+                data_to_write['<unk>'] = [-8.499597, 0.0]
                 continue
 
             if reading_gram == 0 and line.startswith('\\2-grams:'):
@@ -55,7 +55,7 @@ def _get_data_ready():
                 if 's>' in line:  # 带有 s> 的是开头或者结尾，我们不需要
                     continue
                 weight, words, bow = line.strip().split('\t')
-                if float(weight) < -1.5: continue
+                if float(weight) < -1: continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), float(bow))
 
@@ -64,7 +64,7 @@ def _get_data_ready():
                     continue
                 try:
                     weight, words = line.strip().split('\t')
-                    if float(weight) < -1: continue
+                    if float(weight) < -0.5: continue
                 except:
                     print(line)
                     continue
@@ -109,11 +109,10 @@ def _write_py_database():
     with open(word_file, 'r') as f:
         for line in f:
             word, py = line.strip().split('\t')
-            if len(word) > 8:continue
+            if len(word) > 8: continue
             pyData.setdefault(py, [])
             if word not in pyData[py]:
                 pyData[py].append(word)
-
 
     coding = 'gb18030'
     print('Writing pinyin to words data into Sqlite')
@@ -199,7 +198,7 @@ def gen_emission_and_database():
         v = struct.pack("<d", value[0])
         if value[1] is not None:
             v2 = struct.pack("<d", value[1])
-            txn.put(key, v+v2)
+            txn.put(key, v + v2)
         else:
             txn.put(key, v)
     txn.commit()
