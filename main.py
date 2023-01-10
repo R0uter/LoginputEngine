@@ -1,6 +1,6 @@
 import tqdm
 import os
-from train_kenlm import cut_data, arpa_to_lmdb
+from train_kenlm import cut_data, arpa_to_lmdb, data_produce
 if not os.path.exists('./result_files'):
     os.makedirs('./result_files')
 
