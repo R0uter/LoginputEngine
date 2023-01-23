@@ -31,7 +31,8 @@ def cut_data():
                 target.write(cut_line)
             content = []
             gc.collect()
-
+    for cut_line in content:
+        target.write(cut_line)
     pbar.close()
     target.close()
     print('🗃 语料分词处理完成！')
