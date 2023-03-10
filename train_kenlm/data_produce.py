@@ -20,7 +20,7 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '[{}{}{}]'.format(hanzi.punctuation,string.whitespace,"A-Za-z!\"#\$\%\&'\(\)\*\+\,-\.\/:;<=>\?@\[\]\^_`\{\|\}~◆●")  # 保留数字
+ALLPUNC = '[{}{}{}　]'.format(hanzi.stops+string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
 
 lines_cache = []
 
@@ -47,6 +47,8 @@ def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb
     global PROCESS_NUM, MEMORY_LIMIT_GB
     PROCESS_NUM = process_num
     MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
+    utility.init_hanlp()
+    print('|---Worker process ready...')
     while True:
         if q.empty():
             time.sleep(0.1)
@@ -57,22 +59,17 @@ def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb
             q.put(kEndProcess)
             flush_if_needed(force=True)
             break
-        process_line(s)
+        sub_process_line(s)
 
 
-def process_line(s: str):
+def sub_process_line(s: str):
     flush_if_needed()
     line = utility.t2s(s)
     line = re.sub(ALLPUNC, '_', line)
-    lines = line.split('_')
+    lines = line.strip().split('_')
     for sub_line in lines:
         if len(sub_line) <= 1: continue  # if the line is too short, skip it. We need at least 2 characters
-        try:
-            float(sub_line)
-            continue  # if the line is number only, skip it
-        except ValueError:
-            pass
-        lines_cache.append(sub_line + '\n')
+        lines_cache.append(' '.join(utility.cut_line(sub_line)) + '\n')
 
 
 def remove_tmp_file():
@@ -151,6 +148,7 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
             pbar.update(1)
             # 挨个往子进程里送字符串进行处理
             while queue.full():
+                time.sleep(0.01)
                 pass
             queue.put(line)
         f.close()

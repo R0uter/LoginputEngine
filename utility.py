@@ -19,7 +19,7 @@ def load_user_data_pypinyin():
     load_single_dict({ord('豉'): 'chǐ,shì'})
 
 
-def load_user_data_jieba():
+def init_hanlp():
     global tok_fine
     tok_fine = hanlp.load(hanlp.pretrained.tok.FINE_ELECTRA_SMALL_ZH)
 
@@ -64,7 +64,7 @@ def t2s(s: str) -> str:
     return cc.convert(s)
 
 
-def cut_line(s: str) -> [str]:
+def cut_line(s: [str] or str) -> [str]:
     return tok_fine(s)
 
 
