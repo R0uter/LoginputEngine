@@ -1,6 +1,8 @@
 import gc
 import os
 import re
+import signal
+import sys
 import time
 
 from zhon import hanzi
@@ -13,7 +15,7 @@ import datetime
 ARTICLE_DIR = './articles'
 FILEDIR = './result_files'
 DATA_TMP = './result_files/data_tmp'
-DATA_TXT_FILE = './result_files/data.txt'
+DATA_TXT_FILE = './result_files/data_cuted.txt'
 kGB18030 = 'gb18030'
 kEndProcess = '-=-=-=-EOF=-=-=-=-'
 last_time_flush_check = datetime.datetime.now()
@@ -23,7 +25,9 @@ MEMORY_LIMIT_GB = 20 / PROCESS_NUM
 ALLPUNC = '[{}{}{}　]'.format(hanzi.stops+string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
 
 lines_cache = []
-
+jobs = []
+queue = multiprocessing.Queue(1000)
+current_idx = 0
 
 def flush_if_needed(force=False):
     global lines_cache, last_time_flush_check
@@ -42,9 +46,12 @@ def flush_if_needed(force=False):
     gc.collect()
     print('|---🧻 Done, now memory alloc: ', int(memory_alloc))
 
+def sub_processing_signal_handler(signal, frame):
+    print('|---Sub process received SIGINT, finalizing...')
 
 def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb:int = 10):
     global PROCESS_NUM, MEMORY_LIMIT_GB
+    signal.signal(signal.SIGINT, sub_processing_signal_handler)
     PROCESS_NUM = process_num
     MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
     utility.init_hanlp()
@@ -81,8 +88,8 @@ def remove_tmp_file():
 
 
 def sumup_tmp_files():
-    if os.path.exists(DATA_TXT_FILE):
-        os.remove(DATA_TXT_FILE)
+    # if os.path.exists(DATA_TXT_FILE):
+    #     os.remove(DATA_TXT_FILE)
     f = open(DATA_TXT_FILE, mode='a', encoding='utf8')
     for root, directories, filenames in os.walk(FILEDIR):
         for filename in filenames:
@@ -95,9 +102,30 @@ def sumup_tmp_files():
     remove_tmp_file()
 
 
+def end_and_exit() :
+    pbar.close()
+    queue.put(kEndProcess)
+    print('Waiting subprocess to exit')
+
+    for p in jobs:
+        while p.is_alive():
+            print('Queue is not empty yet, check again after 3s...')
+            time.sleep(3)
+            pass
+    print('合并缓存……')
+    sumup_tmp_files()
+
+def signal_handler(signal, frame):
+    print('You pressed Ctrl+C!')
+    print('Subprocess still need to process the rest of the data in queue, please wait...')
+    end_and_exit()
+    print('\n\nCurrent index number: ', current_idx)
+    sys.exit(0)
+
 def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
-
-
+    global current_idx
+    start_line = 0
+    signal.signal(signal.SIGINT, signal_handler)
     print('💭开始统计资料总条目数...')
     all_files = []
     total_counts = 0
@@ -111,16 +139,17 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
                     continue
                 all_files.append(p)
                 total_counts += n
+    all_files = sorted(all_files)
+
     print('''
         🤓 统计完成！
         |---文件数：{}
         |---文本行数：{}
         '''.format(len(all_files), total_counts))
     remove_tmp_file()
+    global pbar
     pbar = tqdm.tqdm(total=total_counts)
-    queue = multiprocessing.Queue(10000)
-    jobs = []
-    for _ in range(0, PROCESS_NUM):
+    for _ in range(0, process_num):
         p = multiprocessing.Process(target=processing_line, args=(queue, process_num, mem_limit_gb))
         jobs.append(p)
         p.start()
@@ -139,27 +168,21 @@ def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
             except:
                 f.close()
         if f.closed:
-            print('Wrong encoding of file {}, bypassing...'.format(path))
+            print('Wrong encoding of file {}, skip...'.format(path))
             continue
         del line
         f.seek(0, 0)
         # 只读取需要的部分，不再一次性加载全文
         for line in f:
+            current_idx += 1
+            if current_idx < start_line: continue
             pbar.update(1)
             # 挨个往子进程里送字符串进行处理
             while queue.full():
-                time.sleep(0.01)
+                time.sleep(0.1)
                 pass
             queue.put(line)
         f.close()
 
-    pbar.close()
-
-    queue.put(kEndProcess)
-    print('Waiting subprocess to exit')
-    for p in jobs:
-        while p.is_alive():
-            pass
-    print('合并缓存……')
-    sumup_tmp_files()
+    end_and_exit()
     print('🗃 语料预处理完成！')
