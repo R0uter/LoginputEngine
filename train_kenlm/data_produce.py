@@ -65,14 +65,14 @@ def process_line(s: str):
     line = utility.t2s(s)
     line = re.sub(ALLPUNC, '_', line)
     lines = line.split('_')
-    for subline in lines:
-        if len(subline) <= 1: continue  # if the line is too short, skip it. We need at least 2 characters
+    for sub_line in lines:
+        if len(sub_line) <= 1: continue  # if the line is too short, skip it. We need at least 2 characters
         try:
-            float(subline)
+            float(sub_line)
             continue  # if the line is number only, skip it
         except ValueError:
             pass
-        lines_cache.append(subline + '\n')
+        lines_cache.append(sub_line + '\n')
 
 
 def remove_tmp_file():
