@@ -4,14 +4,14 @@ import psutil
 from pypinyin import Style, pinyin, load_phrases_dict, load_single_dict
 import json
 import plistlib
-import jieba_fast as jieba
 from opencc import OpenCC
 from res import pinyin_data
 import re
 from zhon import hanzi
+import hanlp
 
 cc = OpenCC('t2s')
-
+global tok_fine
 
 def load_user_data_pypinyin():
     from res import pypinyinDict
@@ -20,7 +20,8 @@ def load_user_data_pypinyin():
 
 
 def load_user_data_jieba():
-    jieba.load_userdict('./res/new_words.txt')
+    global tok_fine
+    tok_fine = hanlp.load(hanlp.pretrained.tok.FINE_ELECTRA_SMALL_ZH)
 
 
 special_py_list = ['ao', 'ai', 'ie', 'ue', 'an']
@@ -64,7 +65,7 @@ def t2s(s: str) -> str:
 
 
 def cut_line(s: str) -> [str]:
-    return list(jieba.cut(s, cut_all=False, HMM=True))
+    return tok_fine(s)
 
 
 def get_pinyin_list(word):

@@ -20,7 +20,7 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '[{}{}{}]'.format(hanzi.punctuation,string.whitespace,"A-Za-z0-9!\"#\$\%\&'\(\)\*\+\,-\.\/:;<=>\?@\[\]\^_`\{\|\}~")
+ALLPUNC = '[{}{}{}]'.format(hanzi.punctuation,string.whitespace,"A-Za-z!\"#\$\%\&'\(\)\*\+\,-\.\/:;<=>\?@\[\]\^_`\{\|\}~◆●")  # 保留数字
 
 lines_cache = []
 

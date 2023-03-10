@@ -4,5 +4,6 @@ psutil
 pypinyin
 opencc-python-reimplemented
 zhon
-jieba
-jieba_fast
+hanlp
+tensorflow-macos
+tensorflow-metal==0.7.1
