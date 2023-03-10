@@ -66,7 +66,12 @@ def process_line(s: str):
     line = re.sub(ALLPUNC, '_', line)
     lines = line.split('_')
     for subline in lines:
-        if len(subline) == 0: continue
+        if len(subline) <= 1: continue  # if the line is too short, skip it. We need at least 2 characters
+        try:
+            float(subline)
+            continue  # if the line is number only, skip it
+        except ValueError:
+            pass
         lines_cache.append(subline + '\n')
 
 
@@ -81,7 +86,7 @@ def remove_tmp_file():
 def sumup_tmp_files():
     if os.path.exists(DATA_TXT_FILE):
         os.remove(DATA_TXT_FILE)
-    f = open(DATA_TXT_FILE, mode='a', encoding=kGB18030)
+    f = open(DATA_TXT_FILE, mode='a', encoding='utf8')
     for root, directories, filenames in os.walk(FILEDIR):
         for filename in filenames:
             p = os.path.join(root, filename)
