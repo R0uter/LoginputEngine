@@ -22,12 +22,13 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '[{}{}{}　]'.format(hanzi.stops+string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
+ALLPUNC = '[{}{}{}　]'.format(hanzi.stops + string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
 
 lines_cache = []
 jobs = []
 queue = multiprocessing.Queue(1000)
 current_idx = 0
+
 
 def flush_if_needed(force=False):
     global lines_cache, last_time_flush_check
@@ -35,8 +36,8 @@ def flush_if_needed(force=False):
     if (datetime.datetime.now() - last_time_flush_check).seconds <= (10 * 60) and not force: return
     last_time_flush_check = datetime.datetime.now()
     memory_alloc = utility.get_current_memory_gb()
-    if memory_alloc < MEMORY_LIMIT_GB and not force:return
-    data_path = DATA_TMP+'-'+str(os.getpid())
+    if memory_alloc < MEMORY_LIMIT_GB and not force: return
+    data_path = DATA_TMP + '-' + str(os.getpid())
     print('|---Current memory alloc: ', int(memory_alloc))
     print('|---Needs flush to disk: ', memory_alloc >= MEMORY_LIMIT_GB, 'Force to: ', force)
     print('|---🚽 Flushing...')
@@ -46,10 +47,12 @@ def flush_if_needed(force=False):
     gc.collect()
     print('|---🧻 Done, now memory alloc: ', int(memory_alloc))
 
+
 def sub_processing_signal_handler(signal, frame):
     print('|---Sub process received SIGINT, finalizing...')
 
-def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb:int = 10):
+
+def processing_line(q: multiprocessing.Queue, process_num: int = 10, mem_limit_gb: int = 10):
     global PROCESS_NUM, MEMORY_LIMIT_GB
     signal.signal(signal.SIGINT, sub_processing_signal_handler)
     PROCESS_NUM = process_num
@@ -66,7 +69,10 @@ def processing_line(q: multiprocessing.Queue, process_num:int = 10, mem_limit_gb
             q.put(kEndProcess)
             flush_if_needed(force=True)
             break
-        sub_process_line(s)
+        try:
+            sub_process_line(s)
+        except Exception as e:
+            print('Error in subprocess: ', e)
 
 
 def sub_process_line(s: str):
@@ -102,7 +108,7 @@ def sumup_tmp_files():
     remove_tmp_file()
 
 
-def end_and_exit() :
+def end_and_exit():
     pbar.close()
     queue.put(kEndProcess)
     print('Waiting subprocess to exit')
@@ -115,6 +121,7 @@ def end_and_exit() :
     print('合并缓存……')
     sumup_tmp_files()
 
+
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
     print('Subprocess still need to process the rest of the data in queue, please wait...')
@@ -122,7 +129,8 @@ def signal_handler(signal, frame):
     print('\n\nCurrent index number: ', current_idx)
     sys.exit(0)
 
-def gen_data_txt(process_num:int = 10, mem_limit_gb:int = 10):
+
+def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     global current_idx
     start_line = 0
     signal.signal(signal.SIGINT, signal_handler)
