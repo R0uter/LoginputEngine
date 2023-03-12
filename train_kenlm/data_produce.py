@@ -163,6 +163,7 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
         p.start()
 
     for path in all_files:
+        print('Processing file: ', path)
         f = open(path, encoding='gb18030')
         try:
             line = f.readline()
