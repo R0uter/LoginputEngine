@@ -136,27 +136,24 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     signal.signal(signal.SIGINT, signal_handler)
     print('💭开始统计资料总条目数...')
     all_files = []
-    total_counts = 0
+    total_bytes = 0
     for root, directories, filenames in os.walk(ARTICLE_DIR):
         for filename in filenames:
             p = os.path.join(root, filename)
             if p.endswith('.txt'):
-                n = utility.read_lines_from(p)
-                if n == -1:
-                    print(p, '⚠️ Wrong encoding!')
-                    continue
+                n = utility.read_bytes_from(p)
                 all_files.append(p)
-                total_counts += n
+                total_bytes += n
     all_files = sorted(all_files)
 
     print('''
         🤓 统计完成！
         |---文件数：{}
-        |---文本行数：{}
-        '''.format(len(all_files), total_counts))
+        |---文本总大小：{}GB
+        '''.format(len(all_files), total_bytes/1024/1024/1024))
     remove_tmp_file()
     global pbar
-    pbar = tqdm.tqdm(total=total_counts)
+    pbar = tqdm.tqdm(total=total_bytes)
     for _ in range(0, process_num):
         p = multiprocessing.Process(target=processing_line, args=(queue, process_num, mem_limit_gb))
         jobs.append(p)
@@ -164,9 +161,11 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
 
     for path in all_files:
         print('Processing file: ', path)
+        fileIsGB18030 = False
         f = open(path, encoding='gb18030')
         try:
             line = f.readline()
+            fileIsGB18030 = True
         except:
             f.close()
 
@@ -177,6 +176,7 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
             except:
                 f.close()
         if f.closed:
+            pbar.update(utility.read_bytes_from(path))
             print('Wrong encoding of file {}, skip...'.format(path))
             continue
         del line
@@ -184,8 +184,8 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
         # 只读取需要的部分，不再一次性加载全文
         for line in f:
             current_idx += 1
+            pbar.update(len(line.encode(kGB18030 if fileIsGB18030 else 'utf8')))
             if current_idx < start_line: continue
-            pbar.update(1)
             # 挨个往子进程里送字符串进行处理
             while queue.full():
                 time.sleep(0.1)

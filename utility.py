@@ -120,6 +120,10 @@ def read_lines_from(path: str) -> int:
     return num
 
 
+def read_bytes_from(path: str) -> int:
+    return os.path.getsize(path)
+
+
 def get_current_memory_gb() -> int:
     pid = os.getpid()
     p = psutil.Process(pid)
