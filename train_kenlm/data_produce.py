@@ -63,6 +63,7 @@ def processing_line(q: multiprocessing.Queue, process_num: int = 10, mem_limit_g
         if q.empty():
             time.sleep(0.1)
             continue
+        time.sleep(0.001)
         s = q.get()
         if s == kEndProcess:
             print('|---Finish and flushing...')
@@ -93,7 +94,7 @@ def remove_tmp_file():
                 os.remove(p)
 
 
-def sumup_tmp_files():
+def merge_tmp_files():
     # if os.path.exists(DATA_TXT_FILE):
     #     os.remove(DATA_TXT_FILE)
     f = open(DATA_TXT_FILE, mode='a', encoding='utf8')
@@ -118,8 +119,8 @@ def end_and_exit():
             print('Queue is not empty yet, check again after 3s...')
             time.sleep(3)
             pass
-    print('合并缓存……')
-    sumup_tmp_files()
+    print('Merging tmp files...')
+    merge_tmp_files()
 
 
 def signal_handler(signal, frame):
@@ -132,9 +133,9 @@ def signal_handler(signal, frame):
 
 def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     global current_idx
-    start_line = 0
+    start_line = 14975377
     signal.signal(signal.SIGINT, signal_handler)
-    print('💭开始统计资料总条目数...')
+    print('💭Start analysing corpus...')
     all_files = []
     total_bytes = 0
     for root, directories, filenames in os.walk(ARTICLE_DIR):
@@ -147,10 +148,9 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     all_files = sorted(all_files)
 
     print('''
-        🤓 统计完成！
-        |---文件数：{}
-        |---文本总大小：{}GB
-        '''.format(len(all_files), total_bytes/1024/1024/1024))
+        |---Files：{}
+        |---Total size：{}GB
+        '''.format(len(all_files), int(total_bytes / 1024 / 1024 / 1024)))
     remove_tmp_file()
     global pbar
     pbar = tqdm.tqdm(total=total_bytes)
@@ -161,30 +161,30 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
 
     for path in all_files:
         print('Processing file: ', path)
-        fileIsGB18030 = False
+        file_is_gb18030 = False
         f = open(path, encoding='gb18030')
         try:
-            line = f.readline()
-            fileIsGB18030 = True
+            f.readline()
+            file_is_gb18030 = True
         except:
             f.close()
 
         if f.closed:
             f = open(path, encoding='utf8')
             try:
-                line = f.readline()
+                f.readline()
             except:
                 f.close()
         if f.closed:
             pbar.update(utility.read_bytes_from(path))
             print('Wrong encoding of file {}, skip...'.format(path))
             continue
-        del line
+
         f.seek(0, 0)
         # 只读取需要的部分，不再一次性加载全文
         for line in f:
             current_idx += 1
-            pbar.update(len(line.encode(kGB18030 if fileIsGB18030 else 'utf8')))
+            pbar.update(len(line.encode(kGB18030 if file_is_gb18030 else 'utf8')))
             if current_idx < start_line: continue
             # 挨个往子进程里送字符串进行处理
             while queue.full():
@@ -194,4 +194,4 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
         f.close()
 
     end_and_exit()
-    print('🗃 语料预处理完成！')
+    print('Corpus analysis finished, data saved to: ', DATA_TXT_FILE)
