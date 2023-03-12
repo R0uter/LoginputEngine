@@ -26,7 +26,7 @@ ALLPUNC = '[{}{}{}　]'.format(hanzi.stops + string.whitespace, string.ascii_let
 
 lines_cache = []
 jobs = []
-queue = multiprocessing.Queue(1000)
+queue = multiprocessing.Queue(500)  # smaller queue to faster exit when ctrl+c
 current_idx = 0
 
 
@@ -133,7 +133,7 @@ def signal_handler(signal, frame):
 
 def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     global current_idx
-    start_line = 14975377
+    start_line = 0
     signal.signal(signal.SIGINT, signal_handler)
     print('💭Start analysing corpus...')
     all_files = []
@@ -150,14 +150,16 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     print('''
         |---Files：{}
         |---Total size：{}GB
-        '''.format(len(all_files), int(total_bytes / 1024 / 1024 / 1024)))
+        '''.format(len(all_files), round(total_bytes / 1024 / 1024 / 1024, 2)))
     remove_tmp_file()
-    global pbar
-    pbar = tqdm.tqdm(total=total_bytes)
+
     for _ in range(0, process_num):
         p = multiprocessing.Process(target=processing_line, args=(queue, process_num, mem_limit_gb))
         jobs.append(p)
         p.start()
+
+    global pbar
+    pbar = tqdm.tqdm(total=total_bytes, unit='B', unit_scale=True, unit_divisor=1024)
 
     for path in all_files:
         print('Processing file: ', path)
