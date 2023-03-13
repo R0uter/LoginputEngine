@@ -103,7 +103,7 @@ def merge_tmp_files():
                         lines = line.split('_')
                         for sub_line in lines:
                             if len(sub_line) <= 1: continue
-                            f.write(line)
+                            f.write(sub_line)
     f.close()
     remove_tmp_file()
 
