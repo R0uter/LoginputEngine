@@ -22,7 +22,7 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '[{}{}{}　]'.format(hanzi.stops + string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
+ALLPUNC = '[{}{}{}　]'.format(hanzi.punctuation + string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
 
 lines_cache = []
 jobs = []
@@ -63,7 +63,6 @@ def processing_line(q: multiprocessing.Queue, process_num: int = 10, mem_limit_g
         if q.empty():
             time.sleep(0.1)
             continue
-        time.sleep(0.001)
         s = q.get()
         if s == kEndProcess:
             print('|---Finish and flushing...')
@@ -80,10 +79,7 @@ def sub_process_line(s: str):
     flush_if_needed()
     line = utility.t2s(s)
     line = re.sub(ALLPUNC, '_', line)
-    lines = line.strip().split('_')
-    for sub_line in lines:
-        if len(sub_line) <= 1: continue  # if the line is too short, skip it. We need at least 2 characters
-        lines_cache.append(' '.join(utility.cut_line(sub_line)) + '\n')
+    lines_cache.append(' '.join(utility.cut_line(line)) + '\n')
 
 
 def remove_tmp_file():
@@ -104,7 +100,10 @@ def merge_tmp_files():
             if 'data_tmp-' in filename:
                 with open(p, 'r', encoding=kGB18030) as t:
                     for line in t:
-                        f.write(line)
+                        lines = line.split('_')
+                        for sub_line in lines:
+                            if len(sub_line) <= 1: continue
+                            f.write(line)
     f.close()
     remove_tmp_file()
 

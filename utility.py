@@ -13,6 +13,7 @@ import hanlp
 cc = OpenCC('t2s')
 global tok_fine
 
+
 def load_user_data_pypinyin():
     from res import pypinyinDict
     load_phrases_dict(pypinyinDict.datas)
