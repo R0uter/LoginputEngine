@@ -22,7 +22,7 @@ last_time_flush_check = datetime.datetime.now()
 
 PROCESS_NUM = 5
 MEMORY_LIMIT_GB = 20 / PROCESS_NUM
-ALLPUNC = '[{}{}{}　]'.format(hanzi.punctuation + string.whitespace, string.ascii_letters, string.digits)  # 保留各种符号
+ALLPUNC = '[{}{}　]'.format(hanzi.punctuation, string.printable)
 
 lines_cache = []
 jobs = []
@@ -100,10 +100,10 @@ def merge_tmp_files():
             if 'data_tmp-' in filename:
                 with open(p, 'r', encoding=kGB18030) as t:
                     for line in t:
-                        lines = line.split('_')
-                        for sub_line in lines:
+                        for sub_line in line.split('_'):
+                            sub_line = sub_line.strip()
                             if len(sub_line) <= 1: continue
-                            f.write(sub_line)
+                            f.write(sub_line+'\n')
     f.close()
     remove_tmp_file()
 
