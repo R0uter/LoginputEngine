@@ -11,7 +11,7 @@ arpa = './result_files/log.arpa'
 
 def main():
     # 1 从 articles 目录中生成预处理好的语料
-    data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
+    # data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
     # 2 使用命令行调用 kenlm 训练 arpa 模型
     # os.system('{} -o 3 --verbose_header --text {}  --arpa {} --prune 0 30 50'.format(lmplz, data, arpa))
     # 3 生成最终可用模型，

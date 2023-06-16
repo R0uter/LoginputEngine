@@ -108,7 +108,10 @@ def _write_py_database():
 
     with open(word_file, 'r') as f:
         for line in f:
-            word, py = line.strip().split('\t')
+            try:
+                word, py = line.strip().split('\t')
+            except ValueError:
+                print('wrong line:', line)
             if len(word) > 8: continue
             pyData.setdefault(py, [])
             if word not in pyData[py]:
