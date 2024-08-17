@@ -5,3 +5,7 @@ tmp
 res/word.txt
 train_kenlm/kenlm/dist
 res/new_words.txt
+transformer/.DS_Store
+.DS_Store
+__pycache__
+.idea

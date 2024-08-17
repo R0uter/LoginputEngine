@@ -216,7 +216,7 @@ cdef class Model:
     
     def full_scores(self, sentence, bos = True, eos = True):
         """
-        full_scores(sentence, bos = True, eos = Ture) -> generate full scores (prob, ngram length, oov)
+        full_scores(sentence, bos = True, eos = True) -> generate full scores (prob, ngram length, oov)
         @param sentence is a string (do not use boundary symbols)
         @param bos should kenlm add a bos state
         @param eos should kenlm add an eos state
@@ -264,7 +264,7 @@ cdef class Model:
     
     def BaseFullScore(self, State in_state, str word, State out_state):
         """
-        Wrapper around model.BaseScore(in_state, Index(word), out_state)
+        Wrapper around model.BaseFullScore(in_state, Index(word), out_state)
 
         :param word: the suffix
         :param state: the context (defaults to NullContext)

@@ -91,13 +91,20 @@ _排序是为了方便单独查询，其实不排也就那样……_
 
 编译 KenLM 库:
 `brew install cmake boost eigen`
+
 ```bash
 wget -O - https://kheafield.com/code/kenlm.tar.gz |tar xz
 mkdir kenlm/build
+```
+
+在 `kenlm/CMakeLists.txt`文件第一行插入`set (CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++ -g3 -Wall -O0")` 来设置 macOS 自带 CLang 编译器支持 c++11
+
+```bash
 cd kenlm/build
 cmake ..
 make -j2
 ```
+
 详见：[KenLM Language Model Toolkit](https://kheafield.com/code/kenlm/) 以及 [kpu/kenlm](https://github.com/kpu/kenlm)
 
 然后使用命令： `cd result_files && ../train_kenlm/kenlm/build/bin/lmplz -o 3 --verbose_header --text data_cuted.txt --arpa log.arpa` 生成 `log.arpa` 模型

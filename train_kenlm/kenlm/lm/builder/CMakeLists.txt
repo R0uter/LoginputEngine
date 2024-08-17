@@ -28,13 +28,24 @@ set(KENLM_BUILDER_SOURCE
 #
 add_library(kenlm_builder ${KENLM_BUILDER_SOURCE})
 
-target_link_libraries(kenlm_builder PUBLIC kenlm kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+target_link_libraries(kenlm_builder PUBLIC kenlm kenlm_util Threads::Threads)
+# Since headers are relative to `include/kenlm` at install time, not just `include`
+target_include_directories(kenlm_builder PUBLIC $<INSTALL_INTERFACE:include/kenlm>)
 
 AddExes(EXES lmplz
-        LIBRARIES kenlm_builder kenlm kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+        LIBRARIES kenlm_builder kenlm kenlm_util Threads::Threads)
 AddExes(EXES count_ngrams
-        LIBRARIES kenlm_builder kenlm kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+        LIBRARIES kenlm_builder kenlm kenlm_util Threads::Threads)
 
+install(
+  TARGETS kenlm_builder
+  EXPORT kenlmTargets
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
+)
+      
 if(BUILD_TESTING)
 
   # Explicitly list the Boost test files to be compiled
@@ -44,5 +55,5 @@ if(BUILD_TESTING)
   )
 
   AddTests(TESTS ${KENLM_BOOST_TESTS_LIST}
-           LIBRARIES kenlm_builder kenlm kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+           LIBRARIES kenlm_builder kenlm kenlm_util Threads::Threads)
 endif()

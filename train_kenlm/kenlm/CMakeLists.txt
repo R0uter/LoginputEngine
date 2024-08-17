@@ -1,3 +1,4 @@
+set (CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++ -g3 -Wall -O0")
 cmake_minimum_required(VERSION 3.1)
 
 if (WIN32)
@@ -41,7 +42,7 @@ if (FORCE_STATIC)
 	  endforeach(flag_var)
   else (MSVC)
     if (NOT CMAKE_C_COMPILER_ID MATCHES ".*Clang")
-      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
     endif ()
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   endif ()
@@ -90,10 +91,7 @@ find_package(Boost 1.41.0 REQUIRED COMPONENTS
 )
 
 # Define where include files live
-include_directories(
-  ${PROJECT_SOURCE_DIR}
-  ${Boost_INCLUDE_DIRS}
-)
+include_directories(${Boost_INCLUDE_DIRS})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -102,12 +100,33 @@ find_package(Threads REQUIRED)
 add_subdirectory(util)
 add_subdirectory(lm)
 
-foreach(SUBDIR IN ITEMS util util/double-conversion util/stream lm lm/builder lm/common lm/filter lm/interpolate)
-  file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/${SUBDIR}/*.h ${CMAKE_CURRENT_LIST_DIR}/${SUBDIR}/*.hh)
-  install(FILES ${HEADERS} DESTINATION include/kenlm/${SUBDIR})
-endforeach(SUBDIR)
-
 if(ENABLE_PYTHON)
   add_subdirectory(python)
 endif()
 
+# Install targets
+install(EXPORT kenlmTargets
+  FILE kenlmTargets.cmake
+  NAMESPACE kenlm::
+  DESTINATION share/kenlm/cmake
+)
+
+foreach(SUBDIR IN ITEMS util util/double-conversion util/stream lm lm/builder lm/common lm/filter lm/interpolate)
+  file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/${SUBDIR}/*.h ${CMAKE_CURRENT_LIST_DIR}/${SUBDIR}/*.hh)
+  install(FILES ${HEADERS} DESTINATION include/kenlm/${SUBDIR} COMPONENT headers)
+endforeach(SUBDIR)
+
+# Config
+include(CMakePackageConfigHelpers)
+# generate the config file that is includes the exports
+configure_package_config_file(${PROJECT_SOURCE_DIR}/cmake/kenlmConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/kenlmConfig.cmake"
+  INSTALL_DESTINATION share/kenlm/cmake
+  NO_SET_AND_CHECK_MACRO
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+  )
+# install the configuration file
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/kenlmConfig.cmake
+  DESTINATION share/kenlm/cmake
+  )

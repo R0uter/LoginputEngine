@@ -32,16 +32,12 @@ add_subdirectory(common)
 
 add_library(kenlm ${KENLM_LM_SOURCE} ${KENLM_LM_COMMON_SOURCE})
 set_target_properties(kenlm PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(kenlm PUBLIC kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+target_link_libraries(kenlm PUBLIC kenlm_util Threads::Threads)
+# Since headers are relative to `include/kenlm` at install time, not just `include`
+target_include_directories(kenlm PUBLIC $<INSTALL_INTERFACE:include/kenlm>)
 
 set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum supported ngram order")
 target_compile_definitions(kenlm PUBLIC -DKENLM_MAX_ORDER=${KENLM_MAX_ORDER})
-
-install(TARGETS kenlm
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
 
 # This directory has children that need to be processed
 add_subdirectory(builder)
@@ -56,7 +52,16 @@ set(EXE_LIST
   kenlm_benchmark
 )
 
-set(LM_LIBS kenlm kenlm_util ${Boost_LIBRARIES} Threads::Threads)
+set(LM_LIBS kenlm kenlm_util Threads::Threads)
+
+install(
+  TARGETS kenlm
+  EXPORT kenlmTargets
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
+)
 
 AddExes(EXES ${EXE_LIST}
         LIBRARIES ${LM_LIBS})
