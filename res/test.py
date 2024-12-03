@@ -7203,8 +7203,6 @@ smallData = {
     "da'nao'zhang'zai'pi'gu'shang'le": "大脑长在屁股上了",
     "fu'nv'er'tong'bao'jian'yi'yuan": "妇女儿童保健医院",
     "yi'ri'wei'shi'zhong'sheng'wei'fu": "一日为师终生为父",
-    "yi'fo'chu'shi'er'fo'sheng'tian": "一佛出世二佛升天",
-    "yi'fo'chu'shi'er'fo'nie'pan": "一佛出世二佛涅盘",
     "yi'ren'xiang'yu'man'zuo'bu'yue": "一人向隅满座不乐",
     "yi'ren'pin'ming'wan'fu'mo'dang": "一人拼命万夫莫当",
     "yi'fu'chu'si'wan'cheng'bu'qing": "一夫出死万乘不轻",
@@ -7221,10 +7219,9 @@ smallData = {
     "yi'ba'bi'ti'yi'ba'yan'lei": "一把鼻涕一把眼泪",
     "you'fu'gong'xiang'you'nan'tong'dang": "有福共享有难同当",
     "you'hua'kuai'shuo'you'pi'kuai'fang": "有话快说有屁快放",
-    "ya'kua'luo'tuo'de'zui'hou'yi'gen'dao'cao": "压垮骆驼的最后一根稻草",
     "yi'li'lao'shu'shi'huai'le'yi'guo'zhou": "一粒老鼠屎坏了一锅粥",
-    "yu'peng'you'jiao'er'bu'xin'hu": "与朋友交而不信乎",
+    "ce'shi'chang'ju'zi'sheng'cheng'xiao'guo": "测试长句子生成效果",
     "yi'ping'zi'bu'man'ban'ping'zi'huang'dang": "一瓶子不满半瓶子晃荡",
     "ya'si'luo'tuo'de'zui'hou'yi'gen'dao'cao": "压死骆驼的最后一根稻草",
-    "yi'ri'bu'jian'ru'ge'san'qiu": "一日不见如隔三秋"
+    "duo'yi'gen'xian'le": "多一根线了"
 }
