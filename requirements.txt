@@ -5,5 +5,5 @@ pypinyin
 opencc-python-reimplemented
 zhon
 hanlp
-tensorflow-macos
-tensorflow-metal==0.7.1
+# tensorflow-macos
+# tensorflow-metal==1.1.0

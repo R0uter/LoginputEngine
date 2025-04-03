@@ -7,13 +7,13 @@ import tqdm
 import struct
 import sqlite3
 import res.pinyin_data
-import multiprocessing
 
 ARPA_PATH = './result_files/log.arpa'
 word_file = './res/word.txt'
 LMDB_FILE = './result_files/transition_v2.mdb'
 PY_DATABASE = './result_files/emission_v2.db'
 data_to_write = {}
+vocab = {} # add a vocab to remove unused words in arpa
 
 MAX_WORD_LENGTH = 8
 
@@ -88,6 +88,7 @@ def _get_data_ready():
             if reading_gram == 1:
                 weight, word, bow = line.strip().split('\t')
                 if float(weight) < -6: continue
+                if word not in vocab: continue
                 data_to_write[word] = (float(weight), float(bow))
 
             if reading_gram == 2:
@@ -95,6 +96,8 @@ def _get_data_ready():
                     continue
                 weight, words, bow = line.strip().split('\t')
                 if float(weight) < -1.2: continue
+                if False in [word in vocab for word in words.split(' ')]:
+                    continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), float(bow))
 
@@ -106,6 +109,8 @@ def _get_data_ready():
                     if float(weight) < -0.5: continue
                 except:
                     print(line)
+                    continue
+                if False in [word in vocab for word in words.split(' ')]:
                     continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), None)
@@ -132,6 +137,8 @@ def _write_py_database():
                 if '\xa0' in line: continue
                 weight, word, _ = line.split('\t')
                 if float(weight) < -6: continue
+                if len(word) > 4: continue
+                vocab[word] = 0
                 gram1_raw_data[word] = float(weight)
 
     pyData = {}
@@ -152,6 +159,7 @@ def _write_py_database():
             except ValueError:
                 print('wrong line:', line)
             if len(word) > 8: continue
+            if len(word) <= 4: vocab[word] = 0
             pyData.setdefault(py, [])
             if word not in pyData[py]:
                 pyData[py].append(word)
@@ -217,14 +225,10 @@ def _write_py_database():
 
 
 def gen_emission_and_database():
-    p = multiprocessing.Process(target=_write_py_database)
-    p.start()
-
-    _get_data_ready()
-    coding = 'gb18030'
-
+    _write_py_database() # this also build the vocab for later use
+    _get_data_ready() # read arpa and filter out based on weight and vocab
     print('Start writing into LMDB')
-
+    coding = 'gb18030'
     for file in [LMDB_FILE, LMDB_FILE + '-lock']:
         if os.path.exists(file):
             os.remove(file)
@@ -244,9 +248,5 @@ def gen_emission_and_database():
     os.remove(LMDB_FILE + '-tmp')
     pbar.close()
 
-    if p.is_alive():
-        p.join()
-
-    p.close()
-
     print('🎉️ All done!')
+
