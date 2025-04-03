@@ -17,6 +17,45 @@ data_to_write = {}
 
 MAX_WORD_LENGTH = 8
 
+def quantize_floats(floats, bits=8, min_val=-10.0, max_val=0.0):
+    """
+    将浮点数列表量化为整数，支持回退权重为 None，明确小端字节序。
+    :param floats: 输入浮点数列表，例如 [-1.1111, -2.2222] 或 [-1.1111, None]
+    :param bits: 量化位数（8 或 16）
+    :param min_val: 浮点数最小值
+    :param max_val: 浮点数最大值
+    :return: 量化后的整数列表和打包的二进制字节流（小端）
+    """
+    if bits not in [8, 16]:
+        raise ValueError("只支持 8 位或 16 位量化")
+
+    # 计算量化范围
+    max_int = (1 << bits) - 1  # 8 位: 255, 16 位: 65535
+    scale = max_int / (max_val - min_val)
+    offset = min_val
+
+    # 量化
+    quantized = []
+    for f in floats:
+        if f is None:
+            continue
+        q = int((f - offset) * scale)
+        q = max(0, min(max_int, q))  # 限制范围
+        quantized.append(q)
+
+    # 打包成二进制，明确小端字节序
+    if bits == 8:
+        if len(quantized) == 1:
+            binary = struct.pack('<B', quantized[0])  # 小端，单个 8 位整数
+        else:
+            binary = struct.pack('<BB', *quantized)  # 小端，2 个 8 位整数
+    else:  # 16 位
+        if len(quantized) == 1:
+            binary = struct.pack('<H', quantized[0])  # 小端，单个 16 位整数
+        else:
+            binary = struct.pack('<HH', *quantized)  # 小端，2 个 16 位整数
+
+    return quantized, binary
 
 def _get_data_ready():
     print('Loading Arpa...')
@@ -197,13 +236,8 @@ def gen_emission_and_database():
     for str_key, value in data_to_write.items():
         pbar.update()
         key = str_key.encode(encoding=coding)
-
-        v = struct.pack("<d", value[0])
-        if value[1] is not None:
-            v2 = struct.pack("<d", value[1])
-            txn.put(key, v + v2)
-        else:
-            txn.put(key, v)
+        quantized, v = quantize_floats(value, 8)
+        txn.put(key, v)
     txn.commit()
     env.copy(LMDB_FILE, compact=True)
     env.close()

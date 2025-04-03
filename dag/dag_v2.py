@@ -13,6 +13,32 @@ PY_DATABASE = './result_files/emission_v2.db'
 env: lmdb.Environment = None
 con = None
 
+def dequantize_float(binary, bits=8, min_val=-10.0, max_val=0.0):
+    """
+    将量化后的二进制解码回浮点数，支持单值或双值，明确小端字节序。
+    :param binary: 量化后的字节流
+    :param bits: 量化位数（8 或 16）
+    :param min_val: 浮点数最小值
+    :param max_val: 浮点数最大值
+    :param has_backoff: 是否有回退权重（True 表示双值，False 表示单值）
+    :return: 解码后的浮点数列表
+    """
+    if bits not in [8, 16]:
+        raise ValueError("只支持 8 位或 16 位量化")
+
+    # 解包二进制，明确小端字节序
+    if bits == 8:
+            quantized = struct.unpack('<B', binary)[0]   # 小端，单个 8 位整数
+    else:  # 16 位
+            quantized = struct.unpack('<H', binary)[0]   # 小端，单个 16 位整数
+
+    # 计算反量化参数
+    max_int = (1 << bits) - 1
+    scale = (max_val - min_val) / max_int
+
+    # 反量化
+    f = min_val + quantized * scale
+    return f
 
 def load_data():
     print('Loading data.')
@@ -40,11 +66,7 @@ def load_data():
     print(env.stat(), env.info())
     print('Done.')
 
-
-load_data()
-
 bow_cache = {}
-
 
 def _get_words_from(pinyin: [str]) -> [str]:
     if len(pinyin) > 8: return None
@@ -66,10 +88,10 @@ def _get_gram_1_weight_from(word: str) -> float:
         data = t.get(word.encode(kGB18030))
         if not data:
             data = t.get('<unk>'.encode(kGB18030))
-            return struct.unpack('<d', data[:8])[0]
+            return struct.unpack('<B', data[:1])[0] - 255
     if word not in bow_cache:
-        bow_cache[word] = struct.unpack('<d', data[8:])[0]
-    return struct.unpack('<d', data[:8])[0]
+        bow_cache[word] = struct.unpack('<B', data[1:])[0] - 255
+    return struct.unpack('<B', data[:1])[0] - 255
 
 
 def _get_gram_1_bow_from(word: str) -> float or None:
@@ -81,7 +103,7 @@ def _get_gram_1_bow_from(word: str) -> float or None:
         data = t.get(word.encode(kGB18030))
         if not data:
             return None
-    return struct.unpack('<d', data[8:])[0]
+    return struct.unpack('<B', data[1:])[0] - 255
 
 
 def _get_words_with_gram_1_weight_from(pinyin: [str]) -> {}:
@@ -103,8 +125,8 @@ def _get_gram_2_weight_from(last_one: str, one: str) -> float:
             bow = _get_gram_1_bow_from(last_one) or 0
             return bow + _get_gram_1_weight_from(one)
     if key not in bow_cache:
-        bow_cache[key] = struct.unpack('<d', data[8:])[0]
-    return struct.unpack('<d', data[:8])[0]
+        bow_cache[key] = struct.unpack('<B', data[1:])[0] - 255
+    return struct.unpack('<B', data[:1])[0] - 255
 
 
 def _get_gram_2_bow_from(last_one: str, one: str) -> float or None:
@@ -118,7 +140,7 @@ def _get_gram_2_bow_from(last_one: str, one: str) -> float or None:
         if not data:
             return None
 
-    return struct.unpack('<d', data[8:])[0]
+    return struct.unpack('<B', data[1:])[0] - 255
 
 
 def _get_gram_3_weight_from(last_last_one: str, last_one: str,
@@ -129,7 +151,7 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
         if not data:
             bow = _get_gram_2_bow_from(last_last_one, last_one) or 0
             return bow + _get_gram_2_weight_from(last_one, one)
-    return struct.unpack('<d', data)[0]
+    return struct.unpack('<B', data)[0]
 
 
 def get_candidates_from(py: str, path_num=6) -> list:
