@@ -33,6 +33,7 @@ def test():
     print('Running time:{}ms'.format((end - start).microseconds / 1000))
     for item in l:
         print('/'.join(item.path), item.score)
+    print(dag.get_counter_stats())
     import res.test
     test_data = res.test.smallData
     pbar = tqdm.tqdm(total=len(test_data))
@@ -48,9 +49,20 @@ def test():
         if pbar.n % 100 == 0 and rstr != value and len(r) > 0:
             print("test:{}, result:{}, should:{}".format(py, '/'.join(r[0].path), value))
     print('命中率：{}%'.format(hit / len(test_data) * 100), )
+    print(dag.get_counter_stats())
 
 
 if __name__ == '__main__':
     main()
     # test()
 
+    # import lmdb
+    #
+    # env = lmdb.open('./result_files/transition_v2.mdb',
+    #                 map_size=1048576000,
+    #                 readonly=True,
+    #                 lock=False,
+    #                 subdir=False)
+    # with env.begin() as txn:
+    #     num_records = sum(1 for _ in txn.cursor())
+    # print(f"Total N-gram records: {num_records}")

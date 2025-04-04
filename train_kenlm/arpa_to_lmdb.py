@@ -59,6 +59,9 @@ def quantize_floats(floats, bits=8, min_val=-10.0, max_val=0.0):
 
 def _get_data_ready():
     print('Loading Arpa...')
+    gram1count = 0
+    gram2count = 0
+    gram3count = 0
     with open(ARPA_PATH, 'r') as f:
         reading_gram = 0
 
@@ -87,26 +90,28 @@ def _get_data_ready():
 
             if reading_gram == 1:
                 weight, word, bow = line.strip().split('\t')
-                if float(weight) < -6: continue
+                if float(weight) < -6.5: continue
                 if word not in vocab: continue
                 data_to_write[word] = (float(weight), float(bow))
+                gram1count += 1
 
             if reading_gram == 2:
                 if 's>' in line:  # 带有 s> 的是开头或者结尾，我们不需要
                     continue
                 weight, words, bow = line.strip().split('\t')
-                if float(weight) < -1.2: continue
+                if float(weight) < -2.1: continue
                 if False in [word in vocab for word in words.split(' ')]:
                     continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), float(bow))
+                gram2count += 1
 
             if reading_gram == 3:
                 if 's>' in line:  # 带有 s> 的是开头或者结尾，我们不需要
                     continue
                 try:
                     weight, words = line.strip().split('\t')
-                    if float(weight) < -0.5: continue
+                    if float(weight) < -0.0: continue
                 except:
                     print(line)
                     continue
@@ -114,8 +119,12 @@ def _get_data_ready():
                     continue
                 words = words.replace(' ', '_')
                 data_to_write[words] = (float(weight), None)
+                gram3count += 1
 
     print('Loading Arpa Done!')
+    print('1gram count: ', gram1count)
+    print('2gram count: ', gram2count)
+    print('3gram count: ', gram3count)
 
 
 def _write_py_database():
@@ -197,7 +206,6 @@ def _write_py_database():
                 py_list.append(res.pinyin_data.s2i_dict[py])
             else:
                 py_list.append(0)
-                # print('encounter null py: {0}, bypassing'.format(py))
                 invalid_py = True
         if invalid_py: continue
 

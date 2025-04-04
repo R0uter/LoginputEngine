@@ -13,6 +13,16 @@ PY_DATABASE = './result_files/emission_v2.db'
 env: lmdb.Environment = None
 con = None
 
+# Add counters for n-gram statistics
+gram_counters = {
+    'unigram_miss': 0,
+    'unigram_count': 0,
+    'bigram_count': 0,
+    'trigram_count': 0,
+    'unigram_fallback': 0,  # When higher n-grams fall back to unigram
+    'bigram_fallback': 0    # When trigram falls back to bigram
+}
+
 def dequantize_float(binary, bits=8, min_val=-10.0, max_val=0.0):
     """
     将量化后的二进制解码回浮点数，支持单值或双值，明确小端字节序。
@@ -66,6 +76,39 @@ def load_data():
     print(env.stat(), env.info())
     print('Done.')
 
+def reset_counters():
+    """Reset all n-gram counters"""
+    global gram_counters
+    gram_counters = {
+        'unigram_miss': 0,
+        'unigram_count': 0,
+        'bigram_count': 0,
+        'trigram_count': 0,
+        'unigram_fallback': 0,
+        'bigram_fallback': 0
+    }
+
+def get_counter_stats():
+    """Return a formatted string with counter statistics"""
+    total = sum(gram_counters.values())
+    if total == 0:
+        return "No n-gram lookups performed"
+    total1gram = gram_counters['unigram_count'] + gram_counters['unigram_miss']
+    total2gram = gram_counters['bigram_count'] + gram_counters['unigram_fallback']
+    total3gram = gram_counters['trigram_count'] + gram_counters['bigram_fallback']
+
+    result = "N-gram usage statistics:\n"
+    result += f"Unigram direct hit: {gram_counters['unigram_count']} ({gram_counters['unigram_count']/total*100:.2f}%)\n"
+    result += f"Bigram direct hit: {gram_counters['bigram_count']} ({gram_counters['bigram_count']/total*100:.2f}%)\n"
+    result += f"Trigram direct hit: {gram_counters['trigram_count']} ({gram_counters['trigram_count']/total*100:.2f}%)\n"
+    result += f"Fallbacks to global default: {gram_counters['unigram_miss']} ({gram_counters['unigram_miss']/total*100:.2f}%)\n"
+    result += f"Fallbacks to unigram: {gram_counters['unigram_fallback']} ({gram_counters['unigram_fallback']/total*100:.2f}%)\n"
+    result += f"Fallbacks to bigram: {gram_counters['bigram_fallback']} ({gram_counters['bigram_fallback']/total*100:.2f}%)\n"
+    result += f"Total 1-gram lookups: {total1gram}({total1gram/total*100:.2f}), hit rate: {gram_counters['unigram_count']/total1gram*100:.2f}%\n"
+    result += f"Total 2-gram lookups: {total2gram}({total2gram/total*100:.2f}), hit rate: {gram_counters['bigram_count']/total2gram*100:.2f}%\n"
+    result += f"Total 3-gram lookups: {total3gram}({total3gram/total*100:.2f}), hit rate: {gram_counters['trigram_count']/total3gram*100:.2f}%\n"
+    return result
+
 bow_cache = {}
 
 def _get_words_from(pinyin: [str]) -> [str]:
@@ -84,11 +127,14 @@ def _get_words_from(pinyin: [str]) -> [str]:
 
 
 def _get_gram_1_weight_from(word: str) -> float:
+
     with env.begin(write=False) as t:
         data = t.get(word.encode(kGB18030))
         if not data:
+            gram_counters['unigram_miss'] += 1
             data = t.get('<unk>'.encode(kGB18030))
             return struct.unpack('<B', data[:1])[0] - 255
+    gram_counters['unigram_count'] += 1
     if word not in bow_cache:
         bow_cache[word] = struct.unpack('<B', data[1:])[0] - 255
     return struct.unpack('<B', data[:1])[0] - 255
@@ -122,8 +168,11 @@ def _get_gram_2_weight_from(last_one: str, one: str) -> float:
     with env.begin() as t:
         data = t.get(key)
         if not data:
+            gram_counters['unigram_fallback'] += 1
             bow = _get_gram_1_bow_from(last_one) or 0
             return bow + _get_gram_1_weight_from(one)
+
+    gram_counters['bigram_count'] += 1
     if key not in bow_cache:
         bow_cache[key] = struct.unpack('<B', data[1:])[0] - 255
     return struct.unpack('<B', data[:1])[0] - 255
@@ -149,8 +198,11 @@ def _get_gram_3_weight_from(last_last_one: str, last_one: str,
     with env.begin() as t:
         data = t.get(key)
         if not data:
+            gram_counters['bigram_fallback'] += 1
             bow = _get_gram_2_bow_from(last_last_one, last_one) or 0
             return bow + _get_gram_2_weight_from(last_one, one)
+
+    gram_counters['trigram_count'] += 1
     return struct.unpack('<B', data)[0]
 
 
@@ -225,6 +277,9 @@ def get_candidates_from(py: str, path_num=6) -> list:
 
 
 def evalue(phrase: str, path_num=6, log=False) -> list:
+    # Reset counters at the start of evaluation
+    reset_counters()
+
     phrase_num = len(phrase)
     if phrase_num == 0: return []
     Graph = [PrioritySet(path_num) for _ in range(phrase_num)]
@@ -264,4 +319,6 @@ def evalue(phrase: str, path_num=6, log=False) -> list:
                     Graph[to_idx].put(score, new_path)
 
     result = [item for item in Graph[-1]]
+    if log:
+        print(get_counter_stats())  # Print the n-gram statistics
     return sorted(result, key=lambda item: item.score, reverse=True)
