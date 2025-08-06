@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Dictionary Manager</h1>
+            <p class="text-gray-600">Manage your dictionary entries</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div id="status-message" class="hidden mb-4 p-4 rounded">
+                <!-- Status messages will be shown here -->
+            </div>
+
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">Current Status</h2>
+                <p>Total entries: <span id="word-count" class="font-bold">{{ word_count }}</span></p>
+            </div>
+
+            <div id="entries-container" class="space-y-4">
+                <!-- Entry template -->
+                <div class="entry border-b pb-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Word</label>
+                            <input type="text" class="word-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pinyin</label>
+                            <input type="text" class="pinyin-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 space-x-2">
+                <button id="add-row" type="button" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    + Add Another
+                </button>
+                
+                <button id="submit-btn" type="button" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <span class="btn-text">Save All Entries</span>
+                    <span id="spinner" class="hidden ml-2">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <div id="output-container" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Processing Output</h2>
+            <div id="output-scroller" class="bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm max-h-60 overflow-auto">
+                <pre id="output-content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const entriesContainer = document.getElementById('entries-container');
+            const addRowBtn = document.getElementById('add-row');
+            const submitBtn = document.getElementById('submit-btn');
+            const statusMessage = document.getElementById('status-message');
+            const outputContainer = document.getElementById('output-container');
+            const outputScroller = document.getElementById('output-scroller');
+            const outputContent = document.getElementById('output-content');
+            const wordCount = document.getElementById('word-count');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.querySelector('.btn-text');
+
+            // Add new row
+            function addNewRow() {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'entry border-b pb-4 mb-4';
+                entryDiv.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Word</label>
+                            <input type="text" class="word-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pinyin</label>
+                            <input type="text" class="pinyin-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" class="remove-entry text-red-600 hover:text-red-800 text-sm font-medium">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+                entriesContainer.appendChild(entryDiv);
+                
+                // Focus the new word input
+                entryDiv.querySelector('.word-input').focus();
+            }
+
+            // Remove row
+            entriesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-entry')) {
+                    const entry = e.target.closest('.entry');
+                    if (entry) {
+                        entry.remove();
+                        // Don't allow removing the last row
+                        if (document.querySelectorAll('.entry').length === 0) {
+                            addNewRow();
+                        }
+                    }
+                }
+            });
+
+            // Add row button
+            addRowBtn.addEventListener('click', addNewRow);
+
+            // Submit form
+            submitBtn.addEventListener('click', async function() {
+                const entries = [];
+                let isValid = true;
+                
+                // Validate and collect entries
+                document.querySelectorAll('.entry').forEach(entry => {
+                    const word = entry.querySelector('.word-input').value.trim();
+                    const pinyin = entry.querySelector('.pinyin-input').value.trim();
+                    
+                    if (word && pinyin) {
+                        entries.push({ word, pinyin });
+                    } else if (word || pinyin) {
+                        // Only one field is filled
+                        showStatus('Please fill both word and pinyin for all entries', 'error');
+                        isValid = false;
+                        return;
+                    }
+                });
+
+                if (!isValid) return;
+                
+                if (entries.length === 0) {
+                    showStatus('Please add at least one entry', 'error');
+                    return;
+                }
+
+                // Disable button and show spinner
+                submitBtn.disabled = true;
+                spinner.classList.remove('hidden');
+                outputContainer.classList.remove('hidden');
+                outputContent.textContent = 'Starting processing...\n';
+                showStatus('Processing entries...', 'info');
+
+                try {
+                    // Step 1: Send the data to the /add-words endpoint
+                    const response = await fetch('/add-words', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(entries)
+                    });
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to add words.');
+                    }
+
+                    // Step 2: If successful, connect to the /process endpoint for streaming output
+                    showStatus(`Added ${result.count} word(s). Now running process...`, 'info');
+                    const eventSource = new EventSource('/process');
+
+                    eventSource.onmessage = function(event) {
+                        const data = JSON.parse(event.data);
+
+                        if (data.output) {
+                            outputContent.textContent += data.output;
+                            outputScroller.scrollTop = outputScroller.scrollHeight;
+                        }
+
+                        if (data.status === 'completed') {
+                            showStatus(data.message, 'success');
+                            wordCount.textContent = parseInt(wordCount.textContent) + result.count;
+                            document.querySelectorAll('.entry').forEach(entry => entry.remove());
+                            addNewRow();
+                            eventSource.close();
+                            resetButton();
+                        } else if (data.status === 'error') {
+                            showStatus(data.message, 'error');
+                            eventSource.close();
+                            resetButton();
+                        }
+                    };
+
+                    eventSource.onerror = function() {
+                        showStatus('Error connecting to process stream.', 'error');
+                        eventSource.close();
+                        resetButton();
+                    };
+
+                } catch (error) {
+                    showStatus('Error: ' + error.message, 'error');
+                    resetButton();
+                }
+            });
+
+            function resetButton() {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Save All Entries';
+                spinner.classList.add('hidden');
+            }
+
+            // Show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `p-4 rounded ${type === 'error' ? 'bg-red-100 text-red-700' : type === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`;
+                statusMessage.classList.remove('hidden');
+                
+                // Auto-hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusMessage.classList.add('hidden');
+                    }, 5000);
+                }
+            }
+
+            // Add first row
+            addNewRow();
+        });
+    </script>
+</body>
+</html>
