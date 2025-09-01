@@ -54,7 +54,7 @@ def add_words(entries):
         with open(WORD_FILE, 'a', encoding='utf-8') as f:
             f.writelines(new_lines_to_add)
 
-    return duplicates_found
+    return len(new_lines_to_add), duplicates_found
 
 @app.route('/')
 def index():
@@ -78,7 +78,7 @@ def add_words_route():
             }), 400
             
         # Add all words
-        duplicates = add_words(data)
+        added_count, duplicates = add_words(data)
         
         if duplicates:
             return jsonify({
@@ -89,7 +89,8 @@ def add_words_route():
         
         return jsonify({
             'success': True,
-            'message': 'Successfully added words',
+            'message': f'Successfully added {added_count} words',
+            'count': added_count
         })
         
     except Exception as e:
