@@ -102,29 +102,43 @@ def add_words_route():
 @app.route('/process')
 def process_route():
     def generate():
-        # Start the process
-        process = subprocess.Popen(
-            ['python', MAIN_SCRIPT],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True,
-            cwd=BASE_DIR
-        )
+        # Start the process safely and stream output as SSE
+        try:
+            process = subprocess.Popen(
+                [sys.executable, MAIN_SCRIPT],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+                cwd=BASE_DIR,
+                env={**os.environ, 'PYTHONUNBUFFERED': '1'}
+            )
+        except FileNotFoundError as e:
+            msg = f"Failed to start process: {e}"
+            yield f"data: {json.dumps({'status': 'error', 'message': msg})}\n\n"
+            return
+        except Exception as e:
+            msg = f"Unexpected error starting process: {e}"
+            yield f"data: {json.dumps({'status': 'error', 'message': msg})}\n\n"
+            return
 
-        # Stream the output
-        for line in iter(process.stdout.readline, ''):
-            yield f"data: {json.dumps({'output': line})}\n\n"
-        
-        process.wait()
+        try:
+            # Stream the output
+            for line in iter(process.stdout.readline, ''):
+                yield f"data: {json.dumps({'output': line})}\n\n"
+            
+            process.wait()
 
-        # Finally, send the completion status
-        return_code = process.returncode
-        if return_code == 0:
-            yield f"data: {json.dumps({'status': 'completed', 'message': 'Process completed successfully!'})}\n\n"
-        else:
-            yield f"data: {json.dumps({'status': 'error', 'message': f'Process failed with return code {return_code}'})}\n\n"
+            # Finally, send the completion status
+            return_code = process.returncode
+            if return_code == 0:
+                yield f"data: {json.dumps({'status': 'completed', 'message': 'Process completed successfully!'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'status': 'error', 'message': f'Process failed with return code {return_code}'})}\n\n"
+        finally:
+            if process.stdout:
+                process.stdout.close()
     
     return Response(
         stream_with_context(generate()),
