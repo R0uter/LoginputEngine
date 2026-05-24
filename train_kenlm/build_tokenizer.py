@@ -8,6 +8,8 @@ Outputs:
 """
 
 import gc
+import itertools
+import multiprocessing
 import os
 import re
 
@@ -31,7 +33,33 @@ DEFAULT_VOCAB_SIZE = 200_000
 
 # Match tokens that are purely CJK Unified Ideographs (Basic + Extension A)
 _CHINESE_ONLY_RE = re.compile(r'^[\u4e00-\u9fff\u3400-\u4dbf]+$')
-_cc = OpenCC('t2s')
+
+_worker_cc = None
+
+def _init_worker():
+    global _worker_cc
+    _worker_cc = OpenCC('t2s')
+
+def _process_chunk(args):
+    chunk, chunk_bytes = args
+    return [_worker_cc.convert(line) for line in chunk], chunk_bytes
+
+def _chunk_generator(f, enc, chunk_size=10000):
+    chunk = []
+    chunk_bytes = 0
+    for line in f:
+        chunk_bytes += len(line.encode(enc, errors='ignore'))
+        line = line.strip()
+        if line:
+            chunk.append(line)
+            
+        if len(chunk) >= chunk_size:
+            yield chunk, chunk_bytes
+            chunk = []
+            chunk_bytes = 0
+            
+    if chunk or chunk_bytes > 0:
+        yield chunk, chunk_bytes
 
 
 def _open_corpus_file(path: str):
@@ -67,6 +95,9 @@ def _collect_corpus(output_path: str):
     print(f'    |--- Files: {len(all_files)}, Total: {round(total_bytes / 1024 ** 3, 2)} GB')
     pbar = tqdm.tqdm(total=total_bytes, unit='B', unit_scale=True, unit_divisor=1024)
 
+    num_processes = max(1, (os.cpu_count() or 2) - 1)
+    pool = multiprocessing.Pool(processes=num_processes, initializer=_init_worker)
+
     with open(output_path, 'w', encoding='utf8') as out:
         for path in all_files:
             f, enc = _open_corpus_file(path)
@@ -74,13 +105,20 @@ def _collect_corpus(output_path: str):
                 print(f'⚠️  Cannot read {path}, skipping.')
                 pbar.update(os.path.getsize(path))
                 continue
-            for line in f:
-                pbar.update(len(line.encode(enc, errors='ignore')))
-                line = line.strip()
-                if line:
-                    out.write(_cc.convert(line) + '\n')
+            
+            gen = _chunk_generator(f, enc, chunk_size=10000)
+            while True:
+                batch = list(itertools.islice(gen, 100))
+                if not batch:
+                    break
+                for result_chunk, chunk_bytes in pool.imap(_process_chunk, batch):
+                    pbar.update(chunk_bytes)
+                    for converted_line in result_chunk:
+                        out.write(converted_line + '\n')
             f.close()
 
+    pool.close()
+    pool.join()
     pbar.close()
     gc.collect()
     print(f'    ✅ Corpus written to {output_path}')
