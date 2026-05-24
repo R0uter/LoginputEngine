@@ -138,8 +138,11 @@ def gen_word_list(vocab_size: int = DEFAULT_VOCAB_SIZE) -> list:
     os.makedirs(TOKENIZER_DIR, exist_ok=True)
 
     # ── Step 1: Collect corpus ────────────────────────────────────────────────
-    print('📝 Step 1/3: Collecting and converting corpus...')
-    _collect_corpus(TMP_CORPUS_FILE)
+    if os.path.exists(TMP_CORPUS_FILE):
+        print(f'📝 Step 1/3: Using existing temporary corpus at {TMP_CORPUS_FILE}')
+    else:
+        print('📝 Step 1/3: Collecting and converting corpus...')
+        _collect_corpus(TMP_CORPUS_FILE)
 
     # ── Step 2: Train Unigram tokenizer ──────────────────────────────────────
     print(f'🔧 Step 2/3: Training Unigram tokenizer (vocab_size={vocab_size:,})...')
@@ -154,11 +157,29 @@ def gen_word_list(vocab_size: int = DEFAULT_VOCAB_SIZE) -> list:
         unk_token='<unk>',
         max_piece_length=MAX_WORD_LENGTH,  # prevents long phrases from being learned as tokens
     )
-    tokenizer.train([TMP_CORPUS_FILE], trainer)
+    
+    def corpus_iterator(file_path, chunk_size=10000, max_lines=5_000_000):
+        """Yield chunks of text to avoid loading 20GB into RAM at once.
+        Caps at max_lines (e.g. 5M) so Unigram doesn't consume all 32GB memory."""
+        with open(file_path, 'r', encoding='utf8') as f:
+            batch = []
+            lines_read = 0
+            for line in f:
+                batch.append(line.strip())
+                lines_read += 1
+                if len(batch) >= chunk_size:
+                    yield batch
+                    batch = []
+                    if lines_read >= max_lines:
+                        break
+            if batch:
+                yield batch
+
+    # Train from iterator instead of loading the whole file list directly
+    tokenizer.train_from_iterator(corpus_iterator(TMP_CORPUS_FILE), trainer)
     tokenizer.save(TOKENIZER_PATH)
     print(f'    💾 Tokenizer saved to {TOKENIZER_PATH}')
 
-    # Clean up temporary corpus
     os.remove(TMP_CORPUS_FILE)
 
     # ── Step 3: Export word list ──────────────────────────────────────────────
