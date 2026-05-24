@@ -114,6 +114,7 @@ def gen_word_list(vocab_size: int = DEFAULT_VOCAB_SIZE) -> list:
         vocab_size=vocab_size,
         special_tokens=['<unk>'],
         unk_token='<unk>',
+        max_piece_length=MAX_WORD_LENGTH,  # prevents long phrases from being learned as tokens
     )
     tokenizer.train([TMP_CORPUS_FILE], trainer)
     tokenizer.save(TOKENIZER_PATH)
