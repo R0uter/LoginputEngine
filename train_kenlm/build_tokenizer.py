@@ -26,7 +26,7 @@ WORD_LIST_FILE = './result_files/word_list.txt'
 TMP_CORPUS_FILE = './result_files/tokenizer_corpus_tmp.txt'
 
 kGB18030 = 'gb18030'
-MAX_WORD_LENGTH = 8
+MAX_WORD_LENGTH = 6
 DEFAULT_VOCAB_SIZE = 200_000
 
 # Match tokens that are purely CJK Unified Ideographs (Basic + Extension A)
