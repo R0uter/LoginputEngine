@@ -4,6 +4,7 @@ psutil
 pypinyin
 opencc-python-reimplemented
 zhon
-hanlp
+tokenizers
+# hanlp  # replaced by HuggingFace tokenizers (Unigram model)
 # tensorflow-macos
 # tensorflow-metal==1.1.0
