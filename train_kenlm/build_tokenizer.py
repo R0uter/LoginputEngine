@@ -180,6 +180,7 @@ def gen_word_list(vocab_size: int = DEFAULT_VOCAB_SIZE) -> list:
     tokenizer.save(TOKENIZER_PATH)
     print(f'    💾 Tokenizer saved to {TOKENIZER_PATH}')
 
+    # Clean up temporary corpus
     os.remove(TMP_CORPUS_FILE)
 
     # ── Step 3: Export word list ──────────────────────────────────────────────

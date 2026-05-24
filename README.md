@@ -98,6 +98,7 @@ mkdir kenlm/build
 ```
 
 在 `kenlm/CMakeLists.txt`文件第一行插入`set (CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++ -g3 -Wall -O0")` 来设置 macOS 自带 CLang 编译器支持 c++11
+在 `kenlm/CMakeLists.txt`文件中第 104 行找到 `find_package(Boost 1.41.0 REQUIRED COMPONENTS`，删除其中 `system`，现在新版 boost 已经没有 system 库了。
 
 ```bash
 cd kenlm/build
