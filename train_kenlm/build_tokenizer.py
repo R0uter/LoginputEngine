@@ -63,19 +63,20 @@ def _chunk_generator(f, enc, chunk_size=10000):
 
 
 def _open_corpus_file(path: str):
-    """Try to open a corpus file with gb18030 then utf8 encoding.
+    """Try to open a corpus file with utf8 then gb18030 encoding.
     Returns (file_object, encoding) or (None, None) if both fail."""
-    for enc in (kGB18030, 'utf8'):
+    # Test utf8 first as it's stricter; gb18030 can falsely decode utf8 for a while.
+    for enc in ('utf8', kGB18030):
         try:
-            f = open(path, encoding=enc)
-            f.readline()  # probe
-            f.seek(0)
+            # Read a chunk to verify encoding validity
+            with open(path, 'r', encoding=enc) as f:
+                f.read(1024 * 1024)  # Read up to 1M characters
+            
+            # Re-open with errors='ignore' so localized corruption doesn't crash the job
+            f = open(path, 'r', encoding=enc, errors='ignore')
             return f, enc
         except Exception:
-            try:
-                f.close()
-            except Exception:
-                pass
+            pass
     return None, None
 
 
