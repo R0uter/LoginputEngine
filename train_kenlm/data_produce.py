@@ -258,7 +258,7 @@ def merge_tmp_files():
                 p = os.path.join(root, filename)
                 if 'data_tmp-' not in filename:
                     continue
-                with open(p, 'r', encoding=kGB18030) as t:
+                with open(p, 'r', encoding=kGB18030, errors='ignore') as t:
                     for line in t:
                         for sub_line in line.split('_'):
                             sub_line = sub_line.strip()
@@ -359,30 +359,26 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
 
     for path in all_files:
         print('Processing file: ', path)
-        file_is_gb18030 = False
-        f = open(path, encoding=kGB18030)
-        try:
-            f.readline()
-            file_is_gb18030 = True
-        except Exception:
-            f.close()
-
-        if f.closed:
-            f = open(path, encoding='utf8')
+        # Detect encoding: try utf8 first (stricter), then gb18030.
+        detected_enc = None
+        for enc in ('utf8', kGB18030):
             try:
-                f.readline()
+                with open(path, 'r', encoding=enc) as probe:
+                    probe.read(1024 * 1024)  # read up to 1M chars to verify
+                detected_enc = enc
+                break
             except Exception:
-                f.close()
+                pass
 
-        if f.closed:
+        if detected_enc is None:
             pbar.update(utility.read_bytes_from(path))
             print(f'Wrong encoding of file {path}, skip...')
             continue
 
-        f.seek(0)
+        f = open(path, 'r', encoding=detected_enc, errors='ignore')
         for line in f:
             current_idx += 1
-            pbar.update(len(line.encode(kGB18030 if file_is_gb18030 else 'utf8')))
+            pbar.update(len(line.encode(detected_enc, errors='ignore')))
             if current_idx < start_line:
                 continue
             while queue.full():
