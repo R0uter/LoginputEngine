@@ -8,21 +8,14 @@ from opencc import OpenCC
 from res import pinyin_data
 import re
 from zhon import hanzi
-import hanlp
 
 cc = OpenCC('t2s')
-global tok_fine
 
 
 def load_user_data_pypinyin():
     from res import pypinyinDict
     load_phrases_dict(pypinyinDict.datas)
     load_single_dict({ord('豉'): 'chǐ,shì'})
-
-
-def init_hanlp():
-    global tok_fine
-    tok_fine = hanlp.load(hanlp.pretrained.tok.FINE_ELECTRA_SMALL_ZH)
 
 
 special_py_list = ['ao', 'ai', 'ie', 'ue', 'an']
@@ -64,9 +57,6 @@ def is_pinyin(py: str) -> bool:
 def t2s(s: str) -> str:
     return cc.convert(s)
 
-
-def cut_line(s: [str] or str) -> [str]:
-    return tok_fine(s)
 
 
 def get_pinyin_list(word):

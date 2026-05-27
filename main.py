@@ -1,6 +1,6 @@
 import tqdm
 import os
-from train_kenlm import arpa_to_lmdb, data_produce
+from train_kenlm import arpa_to_lmdb, data_produce, build_tokenizer
 if not os.path.exists('./result_files'):
     os.makedirs('./result_files')
 
@@ -10,12 +10,22 @@ arpa = './result_files/log.arpa'
 
 
 def main():
-    # 1 从 articles 目录中生成预处理好的语料
+    # ── Phase 1: Build tokenizer word list (run once per corpus) ─────────────
+    # Trains a HuggingFace Unigram tokenizer on the raw corpus and exports a
+    # Chinese word list to result_files/word_list.txt
+    # build_tokenizer.gen_word_list(vocab_size=200_000)
+
+    # ── Phase 2: Process corpus with tokenizer + pinyin ───────────────────────
+    # Segments corpus using the Unigram tokenizer (Viterbi decoding),
+    # simultaneously derives per-token pinyin from sentence context.
+    # Outputs: result_files/data_cuted.txt  (for KenLM)
+    #          result_files/word_pinyin.txt (for emission DB)
     # data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
-    # 2 使用命令行调用 kenlm 训练 arpa 模型
+
+    # ── Phase 3: Train KenLM n-gram model ────────────────────────────────────
     # os.system('{} -o 3 --verbose_header --text {}  --arpa {} --prune 0 30 50'.format(lmplz, data, arpa))
-    # 3 生成最终可用模型，
-    #   一个 LMDB 用来查词汇转移概率（以 10 为底的对数）
+
+    # ── Phase 4: Build emission + transition databases ────────────────────────
     # arpa_to_lmdb.gen_emission_and_database()
 
 
