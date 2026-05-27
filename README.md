@@ -20,7 +20,7 @@
 
 该引擎使用 KenLM 生成 ARPA 模型，3-Gram（Tri-Gram）转移矩阵，使用 DAG（动态规划）进行求解。
 Gram 单位为"词汇"，这样大大降低了算法遍历次数（相对于以字为单位来说），转移不存在则以 BackOff 退回低阶，都不存在则使用一阶 `<unk>` 最小值。
-训练时使用 `hanlp` 进行分词，并用 `OpenCC` 统一转换为简体字处理。
+训练时使用 HuggingFace `tokenizers` 库训练 Unigram 分词模型进行分词，并用 `OpenCC` 统一转换为简体字处理。
 考虑到中文输入时大多数情况下并不是从一句话开头进行打字，实际处理时会直接过滤包含起止标记的转移 `<s>` `</s>`。
 
 ## 数据结构
@@ -80,14 +80,45 @@ _排序是为了方便单独查询，其实不排也就那样……_
 （推荐进程数为 CPU 核心数量，比如你的 CPU 具有 4 个核心，那么就设置为 4，给主进程几乎不占资源；
 推荐内存限制为你物理内存的一半，各个进程会平均分配内存，由于存在延时检测机制，所以并不会严格按照设定的内存大小限制）
 
+### 依赖安装
+
+```bash
+pip install -r requirements.txt
+```
+
+主要依赖：`lmdb`、`tqdm`、`psutil`、`pypinyin`、`opencc-python-reimplemented`、`zhon`、`tokenizers`
+
+> 注意：原先使用的 `hanlp` 分词已被 HuggingFace `tokenizers`（Unigram 模型）替代，无需再安装 `hanlp` 及其依赖。
+
 ### 步骤
 
-1 从 `articles` 目录中生成预处理好的语料
+训练流程分为四个阶段：
 
-`data_produce.gen_data_txt()`会从 `articles` 中读取所有文本（`utf8`或`gb18030`）并进行清理，
-去掉所有英文和数字以及标点符号，并每一句拆分成一行进行存储，最终生成的`data_cuted.txt`将被放入`result_files`目录中。
+**第一阶段：训练 Unigram 分词器**
 
-2 使用处理好的语料训练模型
+```python
+build_tokenizer.gen_word_list(vocab_size=200_000)
+```
+
+从 `articles` 目录读取所有语料，使用 OpenCC 转换为简体字，训练 HuggingFace Unigram 分词模型。
+输出：
+- `result_files/tokenizer/tokenizer.json` — 可复用的分词器
+- `result_files/word_list.txt` — 中文词表（供第二阶段使用）
+
+> 该阶段只需对同一语料运行一次，后续可直接复用已训练的分词器。
+
+**第二阶段：语料处理与拼音生成**
+
+```python
+data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
+```
+
+使用第一阶段训练的 Unigram 分词器（Viterbi 解码）对语料进行分词，同时利用句子级 `pypinyin` 推导每个词的拼音（句子上下文有助于多音字处理）。
+输出：
+- `result_files/data_cuted.txt` — 空格分隔的分词结果，供 KenLM 训练
+- `result_files/word_pinyin.txt` — 词→拼音映射，供发射数据库使用
+
+**第三阶段：训练 KenLM n-gram 模型**
 
 编译 KenLM 库:
 `brew install cmake boost eigen`
@@ -110,8 +141,11 @@ make -j2
 
 然后使用命令： `cd result_files && ../train_kenlm/kenlm/build/bin/lmplz -o 3 --verbose_header --text data_cuted.txt --arpa log.arpa` 生成 `log.arpa` 模型
 
-4 将模型转换为落格输入法可读的二进制格式
-`arpa_to_lmdb.gen_emission_and_database()`
+**第四阶段：生成发射与转移数据库**
+
+```python
+arpa_to_lmdb.gen_emission_and_database()
+```
 
 ## 拼音编码
 
