@@ -21,12 +21,15 @@ def main():
     # Outputs: result_files/data_cuted.txt  (for KenLM)
     #          result_files/word_pinyin.txt (for emission DB)
     # data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
+    # char-level KenLM corpus (spaces between chars, no tokenizer):
+    # data_produce.gen_data_txt(process_num=6, mem_limit_gb=10, char_level=True)
 
     # ── Phase 3: Train KenLM n-gram model ────────────────────────────────────
     # os.system('{} -o 3 --verbose_header --text {}  --arpa {} --prune 0 30 50'.format(lmplz, data, arpa))
 
     # ── Phase 4: Build emission + transition databases ────────────────────────
     # arpa_to_lmdb.gen_emission_and_database()
+    pass
 
 
 def test():

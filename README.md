@@ -111,6 +111,8 @@ build_tokenizer.gen_word_list(vocab_size=200_000)
 
 ```python
 data_produce.gen_data_txt(process_num=6, mem_limit_gb=10)
+# 单字级（字间空格，不需要分词器，KenLM 训练单字级别的 n-gram 模型）：
+# data_produce.gen_data_txt(process_num=6, mem_limit_gb=10, char_level=True)
 ```
 
 使用第一阶段训练的 Unigram 分词器（Viterbi 解码）对语料进行分词，同时利用句子级 `pypinyin` 推导每个词的拼音（句子上下文有助于多音字处理）。

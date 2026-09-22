@@ -61,6 +61,8 @@ pbar = None
 
 # Lazy-loaded tokenizer (initialised once per worker process)
 _tokenizer = None
+# True: KenLM tokens are characters ("你 好"), not Unigram words. No tokenizer needed.
+CHAR_LEVEL = False
 
 
 def _get_tokenizer():
@@ -120,14 +122,17 @@ def sub_processing_signal_handler(sig, frame):
     print('|---Sub process received SIGINT, finalizing...')
 
 
-def processing_line(q: multiprocessing.Queue, process_num: int = 10, mem_limit_gb: int = 10):
+def processing_line(q: multiprocessing.Queue, process_num: int = 10, mem_limit_gb: int = 10,
+                    char_level: bool = False):
     """Worker process: consume lines from the queue and call sub_process_line."""
-    global PROCESS_NUM, MEMORY_LIMIT_GB
+    global PROCESS_NUM, MEMORY_LIMIT_GB, CHAR_LEVEL
     signal.signal(signal.SIGINT, sub_processing_signal_handler)
     PROCESS_NUM = process_num
     MEMORY_LIMIT_GB = mem_limit_gb / PROCESS_NUM
+    CHAR_LEVEL = char_level
 
-    _get_tokenizer()  # warm up so first line doesn't pay the load cost
+    if not CHAR_LEVEL:
+        _get_tokenizer()  # warm up so first line doesn't pay the load cost
     print('|---Worker process ready...')
 
     while True:
@@ -157,6 +162,9 @@ def _tokenize_chunk(cjk_text: str):
         list[str]: Token strings whose concatenation equals cjk_text.
                    Falls back to individual characters if reconstruction fails.
     """
+    if CHAR_LEVEL:
+        return list(cjk_text)
+
     tok = _get_tokenizer()
     encoding = tok.encode(cjk_text)
 
@@ -312,15 +320,17 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
+def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10, char_level: bool = False):
     """Phase 2 entry point: segment corpus and generate word-pinyin mapping.
 
-    Requires:
+    Requires (word mode only):
       result_files/tokenizer/tokenizer.json  — produced by build_tokenizer.gen_word_list()
 
     Args:
         process_num:  Number of worker processes (recommend = CPU core count).
         mem_limit_gb: Total memory budget in GB shared across all workers.
+        char_level:   Space between characters ("你 好") instead of Unigram words.
+                      KenLM then trains a character n-gram. Skips the tokenizer.
     """
     global current_idx
     current_idx = 0
@@ -349,7 +359,7 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     for _ in range(process_num):
         p = multiprocessing.Process(
             target=processing_line,
-            args=(queue, process_num, mem_limit_gb),
+            args=(queue, process_num, mem_limit_gb, char_level),
         )
         jobs.append(p)
         p.start()
@@ -390,3 +400,10 @@ def gen_data_txt(process_num: int = 10, mem_limit_gb: int = 10):
     print('Corpus processing finished.')
     print(f'  KenLM corpus: {DATA_TXT_FILE}')
     print(f'  Word-pinyin:  {WORD_PINYIN_FILE}')
+
+
+if __name__ == '__main__':
+    CHAR_LEVEL = True
+    assert _tokenize_chunk('你好世界') == ['你', '好', '世', '界']
+    assert ' '.join(_tokenize_chunk('你好世界')) == '你 好 世 界'
+    print('char_level ok')
